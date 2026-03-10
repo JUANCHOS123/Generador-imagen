@@ -1,6 +1,6 @@
-// api/discord-ping.js - EXCLUSIVAMENTE PARA QUE DISCORD VERIFIQUE
+// api/discord-fix.js - VERSIÓN ULTRASIMPLE
 export default function handler(req, res) {
-    // CORS básico
+    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -9,19 +9,10 @@ export default function handler(req, res) {
         return res.status(204).end();
     }
 
-    // SOLO ACEPTAR POST
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+    // SOLO PARA DEBUG - Mostrar qué recibimos
+    console.log('🔍 HEADERS:', JSON.stringify(req.headers));
+    console.log('🔍 BODY:', JSON.stringify(req.body));
 
-    const interaction = req.body;
-
-    // ⚠️ ÚNICA COSA QUE IMPORTA: RESPONDER AL PING CON { type: 1 }
-    if (interaction?.type === 1) {
-        console.log('✅ PING recibido, respondiendo...');
-        return res.status(200).json({ type: 1 });
-    }
-
-    // Cualquier otra cosa, responder con error
-    return res.status(400).json({ error: 'Expected ping' });
+    // Responder SIEMPRE con { type: 1 } para cualquier POST
+    return res.status(200).json({ type: 1 });
 }
