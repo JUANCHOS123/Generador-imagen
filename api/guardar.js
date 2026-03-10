@@ -1,12 +1,10 @@
-
-// api/guardar.js - VERSIÓN CORREGIDA
+// api/guardar.js
 import fs from 'fs';
 import path from 'path';
 
-const DB_PATH = path.join('/tmp', 'victims.json');
+const DB_PATH = '/tmp/victims.json';
 
 export default function handler(req, res) {
-    // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -15,72 +13,42 @@ export default function handler(req, res) {
         return res.status(204).end();
     }
 
-    // ========== GUARDAR DATOS ==========
+    // GUARDAR
     if (req.method === 'POST') {
         const { userId, data } = req.body;
         
-        // Validar que llegaron datos
-        if (!userId || !data) {
-            return res.status(400).json({ error: 'Faltan userId o data' });
-        }
-
         let victims = {};
-        
-        // Leer archivo existente (si existe)
         try {
             if (fs.existsSync(DB_PATH)) {
-                const contenido = fs.readFileSync(DB_PATH, 'utf8');
-                victims = JSON.parse(contenido);
+                victims = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
             }
-        } catch (e) {
-            // Si hay error al leer, empezamos de cero
-            victims = {};
-        }
+        } catch (e) {}
 
-        // Guardar/actualizar los datos de este usuario
         victims[userId] = data;
-
-        // Escribir archivo
+        
         try {
-            fs.writeFileSync(DB_PATH, JSON.stringify(victims, null, 2));
-            return res.status(200).json({ 
-                status: 'ok', 
-                message: 'Datos guardados',
-                userId: userId 
-            });
+            fs.writeFileSync(DB_PATH, JSON.stringify(victims));
+            return res.status(200).json({ status: 'ok' });
         } catch (e) {
-            return res.status(500).json({ 
-                error: 'Error al escribir archivo',
-                details: e.message 
-            });
+            return res.status(500).json({ error: e.message });
         }
     }
 
-    // ========== LEER DATOS ==========
+    // LEER
     if (req.method === 'GET') {
         const { userId } = req.query;
         
-        // Si no especifica userId, devolvemos todos
-        if (!userId) {
-            try {
-                if (fs.existsSync(DB_PATH)) {
-                    const victims = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-                    return res.status(200).json(victims);
-                }
-            } catch (e) {}
-            return res.status(200).json({});
-        }
-
-        // Devolver solo un usuario específico
         try {
             if (fs.existsSync(DB_PATH)) {
                 const victims = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-                return res.status(200).json(victims[userId] || null);
+                if (userId) {
+                    return res.status(200).json(victims[userId] || null);
+                } else {
+                    return res.status(200).json(victims);
+                }
             }
         } catch (e) {}
         
         return res.status(200).json(null);
     }
-
-    return res.status(405).json({ error: 'Method not allowed' });
 }
