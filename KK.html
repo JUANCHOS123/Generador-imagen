@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roblox Avatar → Discord</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+  :root{--bg:#0f0f0f;--card:#161616;--border:#2a2a2a;--red:#e8281e;--white:#f0ede8;--muted:#666}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--white);font-family:'Syne',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:480px;box-shadow:0 40px 80px rgba(0,0,0,.6)}
+  .title{font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-.02em}
+  .title span{color:var(--red)}
+  .sub{font-size:13px;color:var(--muted);margin-bottom:32px;font-family:'Space Mono',monospace}
+  label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+  input{width:100%;background:#0f0f0f;border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--white);font-family:'Space Mono',monospace;outline:none;transition:border-color .2s;margin-bottom:20px}
+  input:focus{border-color:var(--red)}
+  input::placeholder{color:#444}
+  button{width:100%;background:var(--red);color:white;border:none;border-radius:10px;padding:16px;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;transition:all .2s;letter-spacing:.01em}
+  button:hover{background:#c91e15;transform:translateY(-1px)}
+  button:disabled{background:#333;color:#555;cursor:not-allowed;transform:none}
+  .preview{margin-top:28px;display:none;background:#0f0f0f;border:1px solid var(--border);border-radius:14px;padding:20px;align-items:center;gap:16px}
+  .preview img{width:72px;height:72px;border-radius:12px;border:2px solid var(--border)}
+  .preview-info{flex:1}
+  .preview-name{font-size:16px;font-weight:700;margin-bottom:4px}
+  .preview-id{font-size:12px;color:var(--muted);font-family:'Space Mono',monospace}
+  .status{margin-top:16px;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;display:none;font-family:'Space Mono',monospace}
+  .status.ok{background:#0a2e1a;border:1px solid #0a8a4a;color:#4ade80}
+  .status.err{background:#2e0a0a;border:1px solid #8a0a0a;color:#f87171}
+  .divider{border:none;border-top:1px solid var(--border);margin:24px 0}
+  .note{font-size:11px;color:#444;font-family:'Space Mono',monospace;line-height:1.6;text-align:center}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="title">Avatar <span>→</span> Discord</div>
+  <div class="sub">// API pública de Roblox · sin cookies · sin login</div>
+
+  <label>Username de Roblox</label>
+  <input id="username" type="text" placeholder="ej: Builderman">
+
+  <label>Webhook URL de Discord</label>
+  <input id="webhook" type="text" placeholder="https://discord.com/api/webhooks/...">
+
+  <button id="btn" onclick="enviar()">Enviar imagen al webhook</button>
+
+  <div class="preview" id="preview">
+    <img id="avatarImg" src="" alt="avatar">
+    <div class="preview-info">
+      <div class="preview-name" id="previewName"></div>
+      <div class="preview-id" id="previewId"></div>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <hr class="divider">
+  <div class="note">Solo usa la API pública de Roblox.<br>No almacena datos. No requiere cuenta.</div>
+</div>
+
+<script>
+async function enviar() {
+  const username = document.getElementById('username').value.trim();
+  const webhook = document.getElementById('webhook').value.trim();
+  const btn = document.getElementById('btn');
+  const status = document.getElementById('status');
+  const preview = document.getElementById('preview');
+
+  status.style.display = 'none';
+  preview.style.display = 'none';
+
+  if (!username || !webhook) {
+    mostrarError('Completa ambos campos.');
+    return;
+  }
+  if (!webhook.startsWith('https://discord.com/api/webhooks/')) {
+    mostrarError('El webhook no parece válido.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Buscando usuario...';
+
+  try {
+    // 1. Obtener userId por username
+    const userRes = await fetch(`https://api.roblox.com/users/get-by-username?username=${encodeURIComponent(username)}`);
+    if (!userRes.ok) throw new Error('Usuario no encontrado');
+    const userData = await userRes.json();
+    if (userData.errorMessage) throw new Error('Usuario no existe');
+    const userId = userData.Id;
+
+    btn.textContent = 'Obteniendo avatar...';
+
+    // 2. Obtener URL de la imagen del avatar (busto/cara)
+    const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`);
+    if (!thumbRes.ok) throw new Error('No se pudo obtener el avatar');
+    const thumbData = await thumbRes.json();
+    const imageUrl = thumbData.data?.[0]?.imageUrl;
+    if (!imageUrl) throw new Error('Avatar no disponible');
+
+    // Mostrar preview
+    document.getElementById('avatarImg').src = imageUrl;
+    document.getElementById('previewName').textContent = userData.Username;
+    document.getElementById('previewId').textContent = `ID: ${userId}`;
+    preview.style.display = 'flex';
+
+    btn.textContent = 'Enviando a Discord...';
+
+    // 3. Enviar al webhook con embed
+    const payload = {
+      embeds: [{
+        title: `🎮 ${userData.Username}`,
+        description: `Avatar de Roblox · ID: \`${userId}\``,
+        color: 0xe8281e,
+        image: { url: imageUrl },
+        footer: { text: 'API pública de Roblox' },
+        timestamp: new Date().toISOString()
+      }]
+    };
+
+    const webhookRes = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!webhookRes.ok) {
+      const err = await webhookRes.json().catch(() => ({}));
+      throw new Error(err.message || `Error ${webhookRes.status} en el webhook`);
+    }
+
+    mostrarOk(`✓ Imagen de ${userData.Username} enviada a Discord`);
+  } catch (e) {
+    mostrarError(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enviar imagen al webhook';
+  }
+}
+
+function mostrarOk(msg) {
+  const s = document.getElementById('status');
+  s.textContent = msg;
+  s.className = 'status ok';
+  s.style.display = 'block';
+}
+function mostrarError(msg) {
+  const s = document.getElementById('status');
+  s.textContent = '✗ ' + msg;
+  s.className = 'status err';
+  s.style.display = 'block';
+}
+</script>
+</body>
+</html>
